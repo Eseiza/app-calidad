@@ -487,7 +487,7 @@ window.verRegistro = function(firestoreId) {
       campo('Producto/bollo', r.fabricacion?.producto),
       campo('Observaciones', r.fabricacion?.obs),
     ]),
-    seccion('❄️ Cámara de Fermento', [
+    seccion('🌡️ Cámara de Fermento', [
       campo('Set temperatura', r.camara?.set_temp),
       campo('Temperatura', r.camara?.temp),
       campo('Set humedad', r.camara?.set_hum),
