@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Romero Panificados — Calidad</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="screen-login">
+  <div class="login-box">
+    <div class="login-brand">
+      <span style="font-size:36px">🧪</span>
+      <div>
+        <div class="login-title">ROMERO</div>
+        <div style="font-family:var(--font-head);font-size:18px;letter-spacing:3px;color:var(--text);line-height:1">PANIFICADOS</div>
+      </div>
+    </div>
+    <div class="login-sub">SISTEMA DE CALIDAD</div>
+    <div class="login-tagline"><span>TI 2026</span></div>
+    <div class="field">
+      <label>Seleccioná tu rol</label>
+      <div class="role-grid">
+        <div class="role-btn" data-role="calidad">
+          <span class="r-icon">🧪</span>
+          <span class="r-name">Calidad</span>
+          <span class="r-desc">Carga y visualiza</span>
+        </div>
+        <div class="role-btn" data-role="pasante">
+          <span class="r-icon">📝</span>
+          <span class="r-name">Pasante</span>
+          <span class="r-desc">Solo carga</span>
+        </div>
+        <div class="role-btn" data-role="admin">
+          <span class="r-icon">⚙️</span>
+          <span class="r-name">Admin</span>
+          <span class="r-desc">Carga y visualiza</span>
+        </div>
+        <div class="role-btn" data-role="visualizador">
+          <span class="r-icon">👁️</span>
+          <span class="r-name">Visualizador</span>
+          <span class="r-desc">Solo lectura</span>
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Usuario</label>
+      <input type="text" id="login-user" placeholder="Tu usuario">
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" placeholder="••••••">
+    </div>
+    <button class="btn" id="login-btn">INGRESAR</button>
+  </div>
+</div>
+
+<!-- SCREEN PRINCIPAL (calidad + admin) -->
+<div id="screen-main" style="display:none;flex-direction:column;min-height:100vh;width:100%">
+  <header>
+    <div class="logo">
+      <span class="logo-icon">🧪</span>
+      <div>
+        <div class="logo-text">ROMERO <span>CAL.</span></div>
+        <span class="logo-sub">Control de Calidad</span>
+      </div>
+    </div>
+    <div class="hbadge">
+      <span id="main-nombre">—</span>
+      <span class="role-tag" id="main-role-tag">—</span>
+      <button class="btn-logout" onclick="doLogout()">SALIR</button>
+    </div>
+  </header>
+
+  <div class="vis-tabs" id="tabs-main">
+    <div class="vis-tab active" data-tab="tab-nuevo">✚ Nuevo registro</div>
+    <div class="vis-tab" data-tab="tab-historial">📋 Historial</div>
+  </div>
+
+  <!-- TAB: NUEVO REGISTRO -->
+  <div id="tab-nuevo" class="vis-tab-content app-content active">
+    <div class="section-header">
+      <div class="section-title" style="margin:0">NUEVO REGISTRO</div>
+      <div class="fecha-badge" id="fecha-actual">—</div>
+    </div>
+
+    <!-- TURNO -->
+    <div class="card">
+      <div class="card-title">Turno</div>
+      <div class="turno-grid">
+        <div class="turno-btn" data-turno="mañana">🌅 Mañana</div>
+        <div class="turno-btn" data-turno="tarde">☀️ Tarde</div>
+        <div class="turno-btn" data-turno="noche">🌙 Noche</div>
+      </div>
+    </div>
+
+    <!-- SECCIONES -->
+    <div class="secciones-nav">
+      <button class="seccion-nav-btn active" data-sec="sec-recepcion">Recepción MP</button>
+      <button class="seccion-nav-btn" data-sec="sec-formulacion">Formulación</button>
+      <button class="seccion-nav-btn" data-sec="sec-fabricacion">Fabricación</button>
+      <button class="seccion-nav-btn" data-sec="sec-camara">Cámara</button>
+      <button class="seccion-nav-btn" data-sec="sec-horno">Horno</button>
+      <button class="seccion-nav-btn" data-sec="sec-enfriador">Enfriador</button>
+      <button class="seccion-nav-btn" data-sec="sec-detector">Detector</button>
+      <button class="seccion-nav-btn" data-sec="sec-envase">Envase</button>
+      <button class="seccion-nav-btn" data-sec="sec-bolsas">Bolsas</button>
+    </div>
+
+    <!-- ═══ RECEPCION MP ═══ -->
+    <div id="sec-recepcion" class="seccion active">
+      <div class="card">
+        <div class="card-title">📦 Recepción de Materias Primas</div>
+        <div class="field">
+          <label>Empaque / Estado de los pallets</label>
+          <div class="estado-check-grid">
+            <div class="estado-check-btn" data-val="Bueno">✅ Bueno</div>
+            <div class="estado-check-btn" data-val="Regular">⚠️ Regular</div>
+            <div class="estado-check-btn" data-val="Malo">❌ Malo</div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Observaciones empaque</label>
+          <textarea id="rec-empaque-obs" placeholder="Observaciones del estado del empaque..."></textarea>
+        </div>
+        <div class="field">
+          <label>Fecha de vencimiento</label>
+          <div class="estado-check-grid">
+            <div class="estado-check-btn" data-val="A largo plazo">✅ A largo plazo</div>
+            <div class="estado-check-btn" data-val="Próximo">⚠️ Próximo</div>
+            <div class="estado-check-btn" data-val="Vencido">❌ Vencido</div>
+          </div>
+        </div>
+        <div class="field mb-0">
+          <label>Observaciones vencimiento</label>
+          <textarea id="rec-vto-obs" placeholder="Fechas y observaciones de vencimiento..."></textarea>
+        </div>
+      </div>
+      <div class="seccion-nav-btns">
+        <div></div>
+        <button class="btn btn-sm btn-next" onclick="irSeccion('sec-formulacion')">Formulación →</button>
+      </div>
+    </div>
+
+    <!-- ═══ FORMULACION ═══ -->
+    <div id="sec-formulacion" class="seccion">
+      <div class="card">
+        <div class="card-title">⚗️ Formulación</div>
+        <div class="field">
+          <label>Stock (mínimo 2 días producido)</label>
+          <div class="estado-check-grid">
+            <div class="estado-check-btn" data-val="OK">✅ OK</div>
+            <div class="estado-check-btn" data-val="Bajo">⚠️ Bajo</div>
+            <div class="estado-check-btn" data-val="Sin stock">❌ Sin stock</div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Observaciones stock</label>
+          <textarea id="form-stock-obs" placeholder="Observaciones de stock..."></textarea>
+        </div>
+        <div class="field">
+          <label>Estado del sector</label>
+          <div class="estado-check-grid">
+            <div class="estado-check-btn" data-val="Bueno">✅ Bueno</div>
+            <div class="estado-check-btn" data-val="Regular">⚠️ Regular</div>
+            <div class="estado-check-btn" data-val="Malo">❌ Malo</div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Observaciones sector</label>
+          <textarea id="form-sector-obs" placeholder="Limpieza, organización, etc..."></textarea>
+        </div>
+        <div class="field mb-0">
+          <label>Pesos de las pesadas</label>
+          <textarea id="form-pesos" placeholder="Verificar con la receta. Anotar valores y observaciones..."></textarea>
+        </div>
+      </div>
+      <div class="seccion-nav-btns">
+        <button class="btn btn-sm btn-outline" onclick="irSeccion('sec-recepcion')">← Recepción</button>
+        <button class="btn btn-sm btn-next" onclick="irSeccion('sec-fabricacion')">Fabricación →</button>
+      </div>
+    </div>
+
+    <!-- ═══ FABRICACION ═══ -->
+    <div id="sec-fabricacion" class="seccion">
+      <div class="card">
+        <div class="card-title">🏭 Fabricación</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Molino</label>
+            <div class="radio-group">
+              <label class="radio-label"><input type="radio" name="fab-molino" value="Campodonico"> Campodonico</label>
+              <label class="radio-label"><input type="radio" name="fab-molino" value="Chacabuco"> Chacabuco</label>
+            </div>
+          </div>
+          <div class="field">
+            <label>Refuerzo de gluten (kg)</label>
+            <input type="text" id="fab-gluten" placeholder="Ej: 2.5 kg">
+          </div>
+          <div class="field">
+            <label>Silo 1 — valor tablero</label>
+            <input type="text" id="fab-silo1" placeholder="Valor">
+          </div>
+          <div class="field">
+            <label>Silo 2 — valor tablero</label>
+            <input type="text" id="fab-silo2" placeholder="Valor">
+          </div>
+          <div class="field">
+            <label>Aceite 1 — valor tablero</label>
+            <input type="text" id="fab-aceite1" placeholder="Valor">
+          </div>
+          <div class="field">
+            <label>Aceite 2 — valor tablero</label>
+            <input type="text" id="fab-aceite2" placeholder="Valor">
+          </div>
+          <div class="field">
+            <label>Equipo de frío — valor tablero</label>
+            <input type="text" id="fab-frio" placeholder="Valor">
+          </div>
+          <div class="field">
+            <label>Balanza de tolva — valor tablero</label>
+            <input type="text" id="fab-balanza" placeholder="Valor">
+          </div>
+          <div class="field">
+            <label>Tº agua amasadora — valor tablero</label>
+            <input type="text" id="fab-tagua" placeholder="Ej: 18°C">
+          </div>
+          <div class="field">
+            <label>Producto (peso del bollo)</label>
+            <input type="text" id="fab-producto" placeholder="Producto y peso">
+          </div>
+        </div>
+        <div class="field mb-0">
+          <label>Observación general</label>
+          <textarea id="fab-obs" placeholder="Observaciones generales de fabricación..."></textarea>
+        </div>
+      </div>
+      <div class="seccion-nav-btns">
+        <button class="btn btn-sm btn-outline" onclick="irSeccion('sec-formulacion')">← Formulación</button>
+        <button class="btn btn-sm btn-next" onclick="irSeccion('sec-camara')">Cámara →</button>
+      </div>
+    </div>
+
+    <!-- ═══ CAMARA ═══ -->
+    <div id="sec-camara" class="seccion">
+      <div class="card">
+        <div class="card-title">❄️ Cámara de Fermento</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Set temperatura</label>
+            <input type="text" id="cam-set-temp" placeholder="Ej: 32°C">
+          </div>
+          <div class="field">
+            <label>Temperatura real</label>
+            <input type="text" id="cam-temp" placeholder="Ej: 31.5°C">
+          </div>
+          <div class="field">
+            <label>Set humedad</label>
+            <input type="text" id="cam-set-hum" placeholder="Ej: 80%">
+          </div>
+          <div class="field">
+            <label>Humedad real</label>
+            <input type="text" id="cam-hum" placeholder="Ej: 79%">
+          </div>
+          <div class="field full">
+            <label>Tiempo de fermento (producto)</label>
+            <input type="text" id="cam-tiempo" placeholder="Producto y tiempo. Ej: Lactal 90min">
+          </div>
+        </div>
+        <div class="field mb-0">
+          <label>Observación general</label>
+          <textarea id="cam-obs" placeholder="Observaciones generales de la cámara..."></textarea>
+        </div>
+      </div>
+      <div class="seccion-nav-btns">
+        <button class="btn btn-sm btn-outline" onclick="irSeccion('sec-fabricacion')">← Fabricación</button>
+        <button class="btn btn-sm btn-next" onclick="irSeccion('sec-horno')">Horno →</button>
+      </div>
+    </div>
+
+    <!-- ═══ HORNO ═══ -->
+    <div id="sec-horno" class="seccion">
+      <div class="card">
+        <div class="card-title">🔥 Horno</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Set zona 1</label>
+            <input type="text" id="horn-set-z1" placeholder="Valor">
+          </div>
+          <div class="field">
+            <label>Zona 1 real</label>
+            <input type="text" id="horn-z1" placeholder="Valor">
+          </div>
+          <div class="field">
+            <label>Set zona 2</label>
+            <input type="text" id="horn-set-z2" placeholder="Valor">
+          </div>
+          <div class="field">
+            <label>Zona 2 real</label>
+            <input type="text" id="horn-z2" placeholder="Valor">
+          </div>
+          <div class="field full">
+            <label>Tiempo de cocción (producto)</label>
+            <input type="text" id="horn-tiempo" placeholder="Producto y tiempo. Ej: Lactal 25min">
+          </div>
+          <div class="field full">
+            <label>Transportes</label>
+            <input type="text" id="horn-transportes" placeholder="Ej: T1, T2 — estado y valores">
+          </div>
+        </div>
+      </div>
+      <div class="seccion-nav-btns">
+        <button class="btn btn-sm btn-outline" onclick="irSeccion('sec-camara')">← Cámara</button>
+        <button class="btn btn-sm btn-next" onclick="irSeccion('sec-enfriador')">Enfriador →</button>
+      </div>
+    </div>
+
+    <!-- ═══ ENFRIADOR ═══ -->
+    <div id="sec-enfriador" class="seccion">
+      <div class="card">
+        <div class="card-title">🌬️ Enfriador</div>
+        <div class="field">
+          <label>Receta</label>
+          <input type="text" id="enf-receta" placeholder="Nombre de la receta">
+        </div>
+        <div class="field mb-0">
+          <label>Desmoldeador</label>
+          <input type="text" id="enf-desmoldeador" placeholder="Observaciones del desmoldeador">
+        </div>
+      </div>
+      <div class="seccion-nav-btns">
+        <button class="btn btn-sm btn-outline" onclick="irSeccion('sec-horno')">← Horno</button>
+        <button class="btn btn-sm btn-next" onclick="irSeccion('sec-detector')">Detector →</button>
+      </div>
+    </div>
+
+    <!-- ═══ DETECTOR ═══ -->
+    <div id="sec-detector" class="seccion">
+      <div class="card">
+        <div class="card-title">🔍 Detector de Metales</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Receta</label>
+            <input type="text" id="det-receta" placeholder="Receta activa">
+          </div>
+          <div class="field">
+            <label>Sensibilidad</label>
+            <input type="text" id="det-sensibilidad" placeholder="Valor de sensibilidad">
+          </div>
+        </div>
+        <div class="field mb-0">
+          <label>Patrones — observación</label>
+          <textarea id="det-patrones" placeholder="Resultados de los patrones de prueba..."></textarea>
+        </div>
+      </div>
+      <div class="seccion-nav-btns">
+        <button class="btn btn-sm btn-outline" onclick="irSeccion('sec-enfriador')">← Enfriador</button>
+        <button class="btn btn-sm btn-next" onclick="irSeccion('sec-envase')">Envase →</button>
+      </div>
+    </div>
+
+    <!-- ═══ ENVASE ═══ -->
+    <div id="sec-envase" class="seccion">
+      <div class="card">
+        <div class="card-title">📦 Envase</div>
+        <div class="field">
+          <label>Producto</label>
+          <input type="text" id="env-producto" placeholder="Nombre del producto">
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Paquete</label>
+            <input type="text" id="env-paquete" placeholder="Tipo / descripción">
+          </div>
+          <div class="field">
+            <label>Lote</label>
+            <input type="text" id="env-lote" placeholder="Número de lote">
+          </div>
+          <div class="field full">
+            <label>Vencimiento</label>
+            <input type="text" id="env-vto" placeholder="Fecha de vencimiento">
+          </div>
+        </div>
+      </div>
+      <div class="seccion-nav-btns">
+        <button class="btn btn-sm btn-outline" onclick="irSeccion('sec-detector')">← Detector</button>
+        <button class="btn btn-sm btn-next" onclick="irSeccion('sec-bolsas')">Bolsas →</button>
+      </div>
+    </div>
+
+    <!-- ═══ BOLSAS Y ROLLOS ═══ -->
+    <div id="sec-bolsas" class="seccion">
+      <div class="card">
+        <div class="card-title">🎁 Bolsas y Rollos</div>
+        <div class="field">
+          <label>Producto</label>
+          <input type="text" id="bol-producto" placeholder="Producto activo">
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Bobinado — observación</label>
+            <input type="text" id="bol-bobinado" placeholder="Estado del bobinado">
+          </div>
+          <div class="field">
+            <label>Taco</label>
+            <input type="text" id="bol-taco" placeholder="Observación">
+          </div>
+          <div class="field">
+            <label>Corte circular</label>
+            <input type="text" id="bol-corte-circ" placeholder="Observación">
+          </div>
+          <div class="field mb-0">
+            <label>Corte recto</label>
+            <input type="text" id="bol-corte-rect" placeholder="Observación">
+          </div>
+        </div>
+      </div>
+      <div class="seccion-nav-btns">
+        <button class="btn btn-sm btn-outline" onclick="irSeccion('sec-envase')">← Envase</button>
+        <div></div>
+      </div>
+      <button class="btn btn-green" id="btn-guardar-registro" style="margin-top:12px">GUARDAR REGISTRO ✓</button>
+    </div>
+
+  </div><!-- fin tab-nuevo -->
+
+  <!-- TAB: HISTORIAL -->
+  <div id="tab-historial" class="vis-tab-content app-content">
+    <div class="section-header">
+      <div class="section-title" style="margin:0">HISTORIAL</div>
+    </div>
+    <!-- FILTROS -->
+    <div class="card">
+      <div class="card-title">Filtros</div>
+      <div class="filtros-grid">
+        <div class="field mb-0">
+          <label>Fecha desde</label>
+          <input type="date" id="filtro-desde">
+        </div>
+        <div class="field mb-0">
+          <label>Fecha hasta</label>
+          <input type="date" id="filtro-hasta">
+        </div>
+        <div class="field mb-0">
+          <label>Turno</label>
+          <select id="filtro-turno">
+            <option value="">Todos</option>
+            <option value="mañana">Mañana</option>
+            <option value="tarde">Tarde</option>
+            <option value="noche">Noche</option>
+          </select>
+        </div>
+        <div class="field mb-0">
+          <label>Usuario</label>
+          <input type="text" id="filtro-usuario" placeholder="Buscar...">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn btn-sm btn-green" id="btn-filtrar" style="flex:1">FILTRAR</button>
+        <button class="btn btn-sm btn-outline" id="btn-limpiar">LIMPIAR</button>
+      </div>
+    </div>
+    <div id="historial-list"></div>
+  </div>
+
+</div><!-- fin screen-main -->
+
+<!-- SCREEN VISUALIZADOR -->
+<div id="screen-vis" style="display:none;flex-direction:column;min-height:100vh">
+  <header>
+    <div class="logo">
+      <span class="logo-icon">🧪</span>
+      <div>
+        <div class="logo-text">ROMERO <span>CAL.</span></div>
+        <span class="logo-sub">Control de Calidad</span>
+      </div>
+    </div>
+    <div class="hbadge">
+      <span id="vis-nombre">—</span>
+      <span class="role-tag vis">VISUALIZADOR</span>
+      <button class="btn-logout" onclick="doLogout()">SALIR</button>
+    </div>
+  </header>
+  <div class="vis-tabs">
+    <div class="vis-tab active" data-tab="tab-vis-partes">📋 Registros</div>
+  </div>
+  <div id="tab-vis-partes" class="vis-tab-content app-content active">
+    <div class="section-header">
+      <div class="section-title" style="margin:0">REGISTROS DE CALIDAD</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Filtros</div>
+      <div class="filtros-grid">
+        <div class="field mb-0">
+          <label>Fecha desde</label>
+          <input type="date" id="vis-filtro-desde">
+        </div>
+        <div class="field mb-0">
+          <label>Fecha hasta</label>
+          <input type="date" id="vis-filtro-hasta">
+        </div>
+        <div class="field mb-0">
+          <label>Turno</label>
+          <select id="vis-filtro-turno">
+            <option value="">Todos</option>
+            <option value="mañana">Mañana</option>
+            <option value="tarde">Tarde</option>
+            <option value="noche">Noche</option>
+          </select>
+        </div>
+        <div class="field mb-0">
+          <label>Usuario</label>
+          <input type="text" id="vis-filtro-usuario" placeholder="Buscar...">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn btn-sm btn-green" id="vis-btn-filtrar" style="flex:1">FILTRAR</button>
+        <button class="btn btn-sm btn-outline" id="vis-btn-limpiar">LIMPIAR</button>
+      </div>
+    </div>
+    <div id="vis-historial-list"></div>
+  </div>
+</div>
+
+<!-- MODAL VER REGISTRO -->
+<div id="modal-overlay" class="modal-overlay" style="display:none">
+  <div class="modal modal-registro">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modal-titulo">—</div>
+        <div class="modal-sub" id="modal-meta">—</div>
+      </div>
+      <button class="btn-logout" onclick="cerrarModal()">✕ CERRAR</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
