@@ -467,7 +467,7 @@ window.verRegistro = function(firestoreId) {
       campo('Vencimiento', r.recepcion?.vto_estado),
       campo('Obs. vto.', r.recepcion?.vto_obs),
     ]),
-    seccion('⚗️ Formulación', [
+    seccion('Formulación', [
       campo('Stock', r.formulacion?.stock_estado),
       campo('Obs. stock', r.formulacion?.stock_obs),
       campo('Estado sector', r.formulacion?.sector_estado),
@@ -503,7 +503,7 @@ window.verRegistro = function(firestoreId) {
       campo('Tiempo cocción', r.horno?.tiempo),
       campo('Transportes', r.horno?.transportes),
     ]),
-    seccion('🌬️ Enfriador', [
+    seccion('❄️ Enfriador', [
       campo('Receta', r.enfriador?.receta),
       campo('Desmoldeador', r.enfriador?.desmoldeador),
     ]),
@@ -518,7 +518,7 @@ window.verRegistro = function(firestoreId) {
       campo('Lote', r.envase?.lote),
       campo('Vencimiento', r.envase?.vto),
     ]),
-    seccion('🎁 Bolsas y Rollos', [
+    seccion('Bolsas y Rollos', [
       campo('Producto', r.bolsas?.producto),
       campo('Bobinado', r.bolsas?.bobinado),
       campo('Taco', r.bolsas?.taco),
