@@ -21,7 +21,6 @@ const COL = "registros";
 const USERS = {
   "calidad1":  { password: "Calidad.2026",  role: "calidad",      nombre: "Calidad 1" },
   "calidad2":  { password: "Calidad.2026",  role: "calidad",      nombre: "Calidad 2" },
-  "calidad3":  { password: "Calidad.2026",  role: "calidad",      nombre: "Calidad 3" },
   "pasante1":  { password: "Pasante.2026",  role: "pasante",      nombre: "Pasante 1" },
   "pasante2":  { password: "Pasante.2026",  role: "pasante",      nombre: "Pasante 2" },
   "Admin":     { password: "Admin.2026",    role: "admin",        nombre: "Administrador" },
