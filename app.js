@@ -406,7 +406,7 @@ function renderHistorial(listId, desdeId, hastaId, turnoId, usuarioId) {
     return;
   }
 
-  const turnoLabel = { 'mañana': '🌅 MAÑANA', 'tarde': '☀️ TARDE', 'noche': '🌙 NOCHE' };
+  const turnoLabel = { 'mañana': 'MAÑANA', 'tarde': 'TARDE', 'noche': 'NOCHE' };
 
   list.innerHTML = items.map(r => `
     <div class="registro-card" onclick="verRegistro('${r.firestoreId}')">
