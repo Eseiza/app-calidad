@@ -21,8 +21,8 @@ const COL = "calidad-romero";   // colección visible en Firestore
 const USERS = {
   "calidad1":  { password: "Calidad.2026",  role: "calidad",      nombre: "Calidad 1" },
   "calidad2":  { password: "Calidad.2026",  role: "calidad",      nombre: "Calidad 2" },
-  "pasante1":  { password: "Pasante.2026",  role: "pasante",      nombre: "Pasante 1" },
-  "pasante2":  { password: "Pasante.2026",  role: "pasante",      nombre: "Pasante 2" },
+  "pasanteM":  { password: "Pasante.2026",  role: "pasante",      nombre: "Pasante M" },
+  "pasanteT":  { password: "Pasante.2026",  role: "pasante",      nombre: "Pasante T" },
   "Admin":     { password: "Admin.2026",    role: "admin",        nombre: "Administrador" },
   "viewer":    { password: "Viewer.2026",   role: "visualizador", nombre: "Visualizador" },
 };
