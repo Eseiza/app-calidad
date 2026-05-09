@@ -3,19 +3,19 @@ import {
   getFirestore, collection, addDoc, onSnapshot, query, orderBy
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-/* ══ FIREBASE — reemplazá con tu config ══ */
+/* ══ FIREBASE CONFIG ══ */
 const firebaseConfig = {
-  apiKey:            "TU_API_KEY",
-  authDomain:        "TU_PROJECT.firebaseapp.com",
-  projectId:         "TU_PROJECT_ID",
-  storageBucket:     "TU_PROJECT.firebasestorage.app",
-  messagingSenderId: "TU_SENDER_ID",
-  appId:             "TU_APP_ID"
+  apiKey:            "AIzaSyAQthtgF_PkDRq6M918ZBawK0wqfGjNfR8",
+  authDomain:        "calidad-8b098.firebaseapp.com",
+  projectId:         "calidad-8b098",
+  storageBucket:     "calidad-8b098.firebasestorage.app",
+  messagingSenderId: "240923478785",
+  appId:             "1:240923478785:web:400495e393c98001f3a900"
 };
 
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
-const COL = "registros";
+const COL = "calidad-romero";   // colección visible en Firestore
 
 /* ══ USUARIOS ══ */
 const USERS = {
@@ -29,16 +29,14 @@ const USERS = {
 
 /* ══ STATE ══ */
 const state = {
-  role:        null,
-  currentUser: '',
-  registros:   [],
-  turnoActivo: null,
+  role:           null,
+  currentUser:    '',
+  registros:      [],
+  turnoActivo:    null,
   unsubRegistros: null,
 };
 
-/* ══════════════════════════════════════
-   UTILS
-══════════════════════════════════════ */
+/* ══ UTILS ══ */
 function showToast(msg, isErr = false) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -54,9 +52,7 @@ function formatFecha(iso) {
   });
 }
 
-/* ══════════════════════════════════════
-   FIRESTORE
-══════════════════════════════════════ */
+/* ══ FIRESTORE ══ */
 function suscribirRegistros() {
   const q = query(collection(db, COL), orderBy('timestamp', 'desc'));
   state.unsubRegistros = onSnapshot(q, snap => {
@@ -68,13 +64,13 @@ function suscribirRegistros() {
 function refrescarVistas() {
   const tabH    = document.getElementById('tab-historial');
   const tabVisH = document.getElementById('tab-vis-partes');
-  if (tabH    && tabH.classList.contains('active'))    renderHistorial('historial-list', 'filtro-desde', 'filtro-hasta', 'filtro-turno', 'filtro-usuario');
-  if (tabVisH && tabVisH.classList.contains('active')) renderHistorial('vis-historial-list', 'vis-filtro-desde', 'vis-filtro-hasta', 'vis-filtro-turno', 'vis-filtro-usuario');
+  if (tabH    && tabH.classList.contains('active'))
+    renderHistorial('historial-list', 'filtro-desde', 'filtro-hasta', 'filtro-turno', 'filtro-usuario');
+  if (tabVisH && tabVisH.classList.contains('active'))
+    renderHistorial('vis-historial-list', 'vis-filtro-desde', 'vis-filtro-hasta', 'vis-filtro-turno', 'vis-filtro-usuario');
 }
 
-/* ══════════════════════════════════════
-   LOGIN / LOGOUT
-══════════════════════════════════════ */
+/* ══ LOGIN ══ */
 document.querySelectorAll('.role-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
@@ -108,14 +104,14 @@ function doLogin() {
     document.getElementById('screen-vis').style.display = 'flex';
     document.getElementById('vis-nombre').textContent   = user.nombre;
   } else {
-    document.getElementById('screen-main').style.cssText = 'display:flex;flex-direction:column;min-height:100vh;width:100%';
-    document.getElementById('main-nombre').textContent  = user.nombre;
+    document.getElementById('screen-main').style.cssText =
+      'display:flex;flex-direction:column;min-height:100vh;width:100%';
+    document.getElementById('main-nombre').textContent = user.nombre;
     const tag = document.getElementById('main-role-tag');
     const tagLabels = { admin: 'ADMIN', calidad: 'CALIDAD', pasante: 'PASANTE' };
     tag.textContent = tagLabels[state.role] || state.role.toUpperCase();
     tag.className   = 'role-tag ' + state.role;
 
-    // Pasante no ve la pestaña historial
     if (state.role === 'pasante') {
       const tabHist = document.querySelector('#tabs-main .vis-tab[data-tab="tab-historial"]');
       if (tabHist) tabHist.style.display = 'none';
@@ -150,22 +146,19 @@ function actualizarFecha() {
     ' · ' + ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-/* ══════════════════════════════════════
-   TABS
-══════════════════════════════════════ */
+/* ══ TABS ══ */
 document.querySelectorAll('#tabs-main .vis-tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('#tabs-main .vis-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('#screen-main .vis-tab-content').forEach(c => c.classList.remove('active'));
     tab.classList.add('active');
     document.getElementById(tab.dataset.tab).classList.add('active');
-    if (tab.dataset.tab === 'tab-historial') renderHistorial('historial-list', 'filtro-desde', 'filtro-hasta', 'filtro-turno', 'filtro-usuario');
+    if (tab.dataset.tab === 'tab-historial')
+      renderHistorial('historial-list', 'filtro-desde', 'filtro-hasta', 'filtro-turno', 'filtro-usuario');
   });
 });
 
-/* ══════════════════════════════════════
-   TURNO
-══════════════════════════════════════ */
+/* ══ TURNO ══ */
 document.querySelectorAll('.turno-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.turno-btn').forEach(b => b.classList.remove('selected'));
@@ -174,11 +167,7 @@ document.querySelectorAll('.turno-btn').forEach(btn => {
   });
 });
 
-/* ══════════════════════════════════════
-   SECCIONES
-══════════════════════════════════════ */
-const SECCIONES = ['sec-recepcion', 'sec-formulacion', 'sec-fabricacion', 'sec-camara', 'sec-horno', 'sec-enfriador', 'sec-detector', 'sec-envase', 'sec-bolsas'];
-
+/* ══ SECCIONES ══ */
 document.querySelectorAll('.seccion-nav-btn').forEach(btn => {
   btn.addEventListener('click', () => irSeccion(btn.dataset.sec));
 });
@@ -188,13 +177,10 @@ window.irSeccion = function(id) {
   document.querySelectorAll('.seccion-nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   document.querySelector(`.seccion-nav-btn[data-sec="${id}"]`).classList.add('active');
-  // Scroll al inicio de la sección
   document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
-/* ══════════════════════════════════════
-   ESTADO CHECK BUTTONS
-══════════════════════════════════════ */
+/* ══ ESTADO CHECK BUTTONS ══ */
 document.querySelectorAll('.estado-check-grid').forEach(grid => {
   grid.querySelectorAll('.estado-check-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -204,12 +190,10 @@ document.querySelectorAll('.estado-check-grid').forEach(grid => {
   });
 });
 
-/* ══════════════════════════════════════
-   LEER FORMULARIO
-══════════════════════════════════════ */
-function leerEstadoCheck(gridSelector) {
-  const sel = document.querySelector(gridSelector + ' .estado-check-btn.selected');
-  return sel ? sel.dataset.val : '';
+/* ══ LEER FORMULARIO ══ */
+function leerCampo(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
 }
 
 function leerRadio(name) {
@@ -217,44 +201,42 @@ function leerRadio(name) {
   return sel ? sel.value : '';
 }
 
-function leerCampo(id) {
-  const el = document.getElementById(id);
-  return el ? el.value.trim() : '';
+// Lee el check btn seleccionado dentro de un campo específico por índice dentro de su sección
+function leerEstadoEnSec(secId, fieldIndex) {
+  const campos = document.querySelectorAll(`#${secId} .field`);
+  if (!campos[fieldIndex]) return '';
+  const sel = campos[fieldIndex].querySelector('.estado-check-btn.selected');
+  return sel ? sel.dataset.val : '';
 }
 
 function leerFormulario() {
   return {
-    // Recepción
     recepcion: {
-      empaque_estado: leerEstadoCheck('#sec-recepcion .estado-check-grid:nth-of-type(1)') ||
-                      document.querySelector('#sec-recepcion .field:nth-child(1) .estado-check-btn.selected')?.dataset.val || '',
+      empaque_estado: leerEstadoEnSec('sec-recepcion', 0),
       empaque_obs:    leerCampo('rec-empaque-obs'),
-      vto_estado:     document.querySelector('#sec-recepcion .field:nth-child(3) .estado-check-btn.selected')?.dataset.val || '',
+      vto_estado:     leerEstadoEnSec('sec-recepcion', 2),
       vto_obs:        leerCampo('rec-vto-obs'),
     },
-    // Formulación
     formulacion: {
-      stock_estado:  document.querySelector('#sec-formulacion .field:nth-child(1) .estado-check-btn.selected')?.dataset.val || '',
+      stock_estado:  leerEstadoEnSec('sec-formulacion', 0),
       stock_obs:     leerCampo('form-stock-obs'),
-      sector_estado: document.querySelector('#sec-formulacion .field:nth-child(3) .estado-check-btn.selected')?.dataset.val || '',
+      sector_estado: leerEstadoEnSec('sec-formulacion', 2),
       sector_obs:    leerCampo('form-sector-obs'),
       pesos:         leerCampo('form-pesos'),
     },
-    // Fabricación
     fabricacion: {
-      molino:      leerRadio('fab-molino'),
-      gluten:      leerCampo('fab-gluten'),
-      silo1:       leerCampo('fab-silo1'),
-      silo2:       leerCampo('fab-silo2'),
-      aceite1:     leerCampo('fab-aceite1'),
-      aceite2:     leerCampo('fab-aceite2'),
-      frio:        leerCampo('fab-frio'),
-      balanza:     leerCampo('fab-balanza'),
-      tagua:       leerCampo('fab-tagua'),
-      producto:    leerCampo('fab-producto'),
-      obs:         leerCampo('fab-obs'),
+      molino:   leerRadio('fab-molino'),
+      gluten:   leerCampo('fab-gluten'),
+      silo1:    leerCampo('fab-silo1'),
+      silo2:    leerCampo('fab-silo2'),
+      aceite1:  leerCampo('fab-aceite1'),
+      aceite2:  leerCampo('fab-aceite2'),
+      frio:     leerCampo('fab-frio'),
+      balanza:  leerCampo('fab-balanza'),
+      tagua:    leerCampo('fab-tagua'),
+      producto: leerCampo('fab-producto'),
+      obs:      leerCampo('fab-obs'),
     },
-    // Cámara
     camara: {
       set_temp: leerCampo('cam-set-temp'),
       temp:     leerCampo('cam-temp'),
@@ -263,7 +245,6 @@ function leerFormulario() {
       tiempo:   leerCampo('cam-tiempo'),
       obs:      leerCampo('cam-obs'),
     },
-    // Horno
     horno: {
       set_z1:      leerCampo('horn-set-z1'),
       z1:          leerCampo('horn-z1'),
@@ -272,107 +253,100 @@ function leerFormulario() {
       tiempo:      leerCampo('horn-tiempo'),
       transportes: leerCampo('horn-transportes'),
     },
-    // Enfriador
     enfriador: {
       receta:       leerCampo('enf-receta'),
       desmoldeador: leerCampo('enf-desmoldeador'),
     },
-    // Detector
     detector: {
       receta:       leerCampo('det-receta'),
       sensibilidad: leerCampo('det-sensibilidad'),
       patrones:     leerCampo('det-patrones'),
     },
-    // Envase
     envase: {
       producto: leerCampo('env-producto'),
       paquete:  leerCampo('env-paquete'),
       lote:     leerCampo('env-lote'),
       vto:      leerCampo('env-vto'),
     },
-    // Bolsas
     bolsas: {
-      producto:    leerCampo('bol-producto'),
-      bobinado:    leerCampo('bol-bobinado'),
-      taco:        leerCampo('bol-taco'),
-      corte_circ:  leerCampo('bol-corte-circ'),
-      corte_rect:  leerCampo('bol-corte-rect'),
+      producto:   leerCampo('bol-producto'),
+      bobinado:   leerCampo('bol-bobinado'),
+      taco:       leerCampo('bol-taco'),
+      corte_circ: leerCampo('bol-corte-circ'),
+      corte_rect: leerCampo('bol-corte-rect'),
     },
   };
 }
 
 function limpiarFormulario() {
-  // Limpiar todos los inputs y textareas
-  document.querySelectorAll('#tab-nuevo input[type="text"], #tab-nuevo textarea').forEach(el => el.value = '');
-  document.querySelectorAll('#tab-nuevo input[type="radio"]').forEach(el => el.checked = false);
-  document.querySelectorAll('.estado-check-btn.selected, .turno-btn.selected').forEach(el => el.classList.remove('selected'));
+  document.querySelectorAll('#tab-nuevo input[type="text"], #tab-nuevo textarea')
+    .forEach(el => el.value = '');
+  document.querySelectorAll('#tab-nuevo input[type="radio"]')
+    .forEach(el => el.checked = false);
+  document.querySelectorAll('.estado-check-btn.selected, .turno-btn.selected')
+    .forEach(el => el.classList.remove('selected'));
   state.turnoActivo = null;
   irSeccion('sec-recepcion');
 }
 
-/* ══════════════════════════════════════
-   GUARDAR REGISTRO
-══════════════════════════════════════ */
+/* ══ GUARDAR REGISTRO ══ */
 document.getElementById('btn-guardar-registro').addEventListener('click', async () => {
   if (!state.turnoActivo) { showToast('Seleccioná el turno antes de guardar', true); return; }
 
   const datos = leerFormulario();
 
-  // Verificar que al menos una sección tiene datos
   const tieneDatos = Object.values(datos).some(sec =>
     Object.values(sec).some(v => v && v.trim && v.trim() !== '')
   );
   if (!tieneDatos) { showToast('Completá al menos una sección antes de guardar', true); return; }
 
-  // Calcular qué secciones tienen datos
-  const seccionesConDatos = [];
   const secLabels = {
     recepcion: 'Recepción MP', formulacion: 'Formulación',
     fabricacion: 'Fabricación', camara: 'Cámara',
     horno: 'Horno', enfriador: 'Enfriador',
     detector: 'Detector', envase: 'Envase', bolsas: 'Bolsas'
   };
+  const seccionesConDatos = [];
   Object.entries(datos).forEach(([key, sec]) => {
-    if (Object.values(sec).some(v => v && v.trim && v.trim() !== '')) {
+    if (Object.values(sec).some(v => v && v.trim && v.trim() !== ''))
       seccionesConDatos.push(secLabels[key] || key);
-    }
   });
 
   const ahora = new Date();
   const registro = {
-    timestamp:         ahora.getTime(),
-    fecha:             ahora.toISOString(),
-    turno:             state.turnoActivo,
-    usuario:           state.currentUser,
-    rol:               state.role,
-    secciones:         seccionesConDatos,
+    timestamp:  ahora.getTime(),
+    fecha:      ahora.toISOString(),
+    turno:      state.turnoActivo,
+    usuario:    state.currentUser,
+    rol:        state.role,
+    secciones:  seccionesConDatos,
     ...datos,
   };
 
   const btn = document.getElementById('btn-guardar-registro');
-  btn.disabled = true;
+  btn.disabled    = true;
+  btn.textContent = 'GUARDANDO...';
 
   try {
     await addDoc(collection(db, COL), registro);
-    showToast('✓ Registro guardado');
+    showToast('✓ Registro guardado correctamente');
     limpiarFormulario();
   } catch (e) {
     showToast('Error al guardar: ' + e.message, true);
+    console.error(e);
   } finally {
-    btn.disabled = false;
+    btn.disabled    = false;
+    btn.textContent = 'GUARDAR REGISTRO ✓';
   }
 });
 
-/* ══════════════════════════════════════
-   HISTORIAL
-══════════════════════════════════════ */
+/* ══ FILTROS ══ */
 document.getElementById('btn-filtrar').addEventListener('click', () =>
   renderHistorial('historial-list', 'filtro-desde', 'filtro-hasta', 'filtro-turno', 'filtro-usuario'));
 
 document.getElementById('btn-limpiar').addEventListener('click', () => {
-  ['filtro-desde','filtro-hasta','filtro-turno','filtro-usuario'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
+  ['filtro-desde','filtro-hasta','filtro-turno','filtro-usuario']
+    .forEach(id => { document.getElementById(id).value = ''; });
   renderHistorial('historial-list', 'filtro-desde', 'filtro-hasta', 'filtro-turno', 'filtro-usuario');
 });
 
@@ -380,14 +354,14 @@ document.getElementById('vis-btn-filtrar').addEventListener('click', () =>
   renderHistorial('vis-historial-list', 'vis-filtro-desde', 'vis-filtro-hasta', 'vis-filtro-turno', 'vis-filtro-usuario'));
 
 document.getElementById('vis-btn-limpiar').addEventListener('click', () => {
-  ['vis-filtro-desde','vis-filtro-hasta','vis-filtro-turno','vis-filtro-usuario'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
+  ['vis-filtro-desde','vis-filtro-hasta','vis-filtro-turno','vis-filtro-usuario']
+    .forEach(id => { document.getElementById(id).value = ''; });
   renderHistorial('vis-historial-list', 'vis-filtro-desde', 'vis-filtro-hasta', 'vis-filtro-turno', 'vis-filtro-usuario');
 });
 
+/* ══ HISTORIAL ══ */
 function renderHistorial(listId, desdeId, hastaId, turnoId, usuarioId) {
-  const list    = document.getElementById(listId);
+  const list = document.getElementById(listId);
   if (!list) return;
 
   const desde   = document.getElementById(desdeId)?.value   || '';
@@ -422,15 +396,14 @@ function renderHistorial(listId, desdeId, hastaId, turnoId, usuarioId) {
   `).join('');
 }
 
-/* ══════════════════════════════════════
-   MODAL VER REGISTRO
-══════════════════════════════════════ */
+/* ══ MODAL VER REGISTRO ══ */
 window.verRegistro = function(firestoreId) {
   const r = state.registros.find(x => x.firestoreId === firestoreId);
   if (!r) return;
 
   document.getElementById('modal-titulo').textContent = 'Registro de Calidad';
-  document.getElementById('modal-meta').textContent   = `${formatFecha(r.fecha)} · ${r.usuario} · Turno ${r.turno}`;
+  document.getElementById('modal-meta').textContent   =
+    `${formatFecha(r.fecha)} · ${r.usuario} · Turno ${r.turno}`;
 
   const colorVal = (v) => {
     if (!v) return 'modal-campo-valor';
@@ -536,4 +509,18 @@ window.cerrarModal = function() {
 
 document.getElementById('modal-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('modal-overlay')) cerrarModal();
+});
+
+/* ══ TABS VISUALIZADOR ══ */
+document.querySelectorAll('#screen-vis .vis-tab')?.forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('#screen-vis .vis-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('#screen-vis .vis-tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    const target = document.getElementById(tab.dataset.tab);
+    if (target) {
+      target.classList.add('active');
+      renderHistorial('vis-historial-list', 'vis-filtro-desde', 'vis-filtro-hasta', 'vis-filtro-turno', 'vis-filtro-usuario');
+    }
+  });
 });
