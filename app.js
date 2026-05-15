@@ -89,13 +89,16 @@ function suscribirScoring() {
   }, err => showToast('Error Firestore scoring: ' + err.message, true));
 }
 
+/* ══ REFRESCAR VISTAS — actualiza SIEMPRE todas las listas presentes en el DOM ══ */
 function refrescarVistas() {
-  const tabH    = document.getElementById('tab-historial');
-  const tabVisH = document.getElementById('tab-vis-partes');
-  const tabVisS = document.getElementById('tab-vis-scoring');
-  if (tabH    && tabH.classList.contains('active'))    renderHistorial();
-  if (tabVisH && tabVisH.classList.contains('active')) renderHistorialVis();
-  if (tabVisS && tabVisS.classList.contains('active')) renderScoringVis();
+  // Historial interno (admin / calidad / pasante)
+  if (document.getElementById('historial-list'))     renderHistorial();
+
+  // Vista registros del visualizador
+  if (document.getElementById('vis-historial-list')) renderHistorialVis();
+
+  // Vista scoring del visualizador
+  if (document.getElementById('vis-scoring-list'))   renderScoringVis();
 }
 
 /* ══ LOGIN ══ */
@@ -143,6 +146,8 @@ function doLogin() {
     actualizarFechas();
     setInterval(actualizarFechas, 60000);
   }
+
+  // Suscribir a Firestore para todos los roles
   suscribirRegistros();
   suscribirScoring();
 }
@@ -220,7 +225,6 @@ document.querySelectorAll('.categoria-btn').forEach(btn => {
     btn.classList.add('active');
     state.categoriaActiva = btn.dataset.cat;
 
-    // Mostrar grupo de productos y form correspondiente
     ['envase','bolleria','molde'].forEach(cat => {
       const gEl = document.getElementById(`scoring-productos-${cat}`);
       const fEl = document.getElementById(`scoring-form-${cat}`);
@@ -258,7 +262,6 @@ document.querySelectorAll('.estado-check-grid').forEach(grid => {
 document.querySelectorAll('.transport-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const t = btn.dataset.t;
-    // Deseleccionar ambos del mismo transporte
     document.querySelectorAll(`.transport-btn[data-t="${t}"]`).forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
     state.transportes[t] = btn.dataset.v;
