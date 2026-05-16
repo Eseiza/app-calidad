@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import {
-  getFirestore, collection, addDoc, onSnapshot, query, orderBy
+  getFirestore, collection, addDoc, onSnapshot, query, orderBy,
+  doc, updateDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
 /* ══ FIREBASE ══ */
@@ -17,15 +18,26 @@ const db  = getFirestore(app);
 const COL_REG     = "calidad-romero";
 const COL_SCORING = "calidad-scoring";
 
+/* ══ ROLES CON PERMISO CRUD ══ */
+const ROLES_CRUD = ['admin', 'calidad'];
+
 /* ══ USUARIOS ══ */
 const USERS = {
-  "calidad1":  { password: "Calidad.2026",  role: "calidad",      nombre: "Calidad 1" },
-  "calidad2":  { password: "Calidad.2026",  role: "calidad",      nombre: "Calidad 2" },
+  "calidad1":  { password: "Calidad.2026",  role: "calidad",      nombre: "Mili" },
+  "calidad2":  { password: "Calidad.2026",  role: "calidad",      nombre: "Calidad" },
   "pasanteM":  { password: "Pasante.2026",  role: "pasante",      nombre: "Pasante TM" },
   "pasanteT":  { password: "Pasante.2026",  role: "pasante",      nombre: "Pasante TT" },
-  "Admin":     { password: "Admin.2026",    role: "admin",        nombre: "Administrador" },
+  "admin":     { password: "Admin.2026",    role: "admin",        nombre: "Administrador" },
   "viewer":    { password: "Viewer.2026",   role: "visualizador", nombre: "Visualizador" },
 };
+
+/* ══ PRODUCTOS SCORING ══ */
+const PRODUCTOS_BOLLERIA = ['Pancho', 'Hamburguesa', 'Super', 'Max'];
+const PRODUCTOS_MOLDE    = [
+  'Lacteado Familiar', 'Lacteado Chico',
+  'Salvado Familiar',  'Salvado Chico',
+  'Integral',          'Multicereal'
+];
 
 /* ══ STATE ══ */
 const state = {
@@ -33,10 +45,12 @@ const state = {
   registros: [], scorings: [],
   turnoActivo: null,
   turnoScoringActivo: null,
-  categoriaActiva: 'envase',
+  categoriaActiva: 'bolleria',
   historialTipo: 'registros',
   transportes: { t1: null, t2: null, t3: null },
   unsubReg: null, unsubSco: null,
+  editandoId: null,
+  editandoColeccion: null,
 };
 
 /* ══ UTILS ══ */
@@ -72,6 +86,10 @@ function leerEstadoEnSec(secId, fieldIndex) {
   return sel ? sel.dataset.val : '';
 }
 
+function canCRUD() {
+  return ROLES_CRUD.includes(state.role);
+}
+
 /* ══ FIRESTORE ══ */
 function suscribirRegistros() {
   const q = query(collection(db, COL_REG), orderBy('timestamp', 'desc'));
@@ -89,15 +107,10 @@ function suscribirScoring() {
   }, err => showToast('Error Firestore scoring: ' + err.message, true));
 }
 
-/* ══ REFRESCAR VISTAS — actualiza SIEMPRE todas las listas presentes en el DOM ══ */
+/* ══ REFRESCAR VISTAS ══ */
 function refrescarVistas() {
-  // Historial interno (admin / calidad / pasante)
   if (document.getElementById('historial-list'))     renderHistorial();
-
-  // Vista registros del visualizador
   if (document.getElementById('vis-historial-list')) renderHistorialVis();
-
-  // Vista scoring del visualizador
   if (document.getElementById('vis-scoring-list'))   renderScoringVis();
 }
 
@@ -146,8 +159,6 @@ function doLogin() {
     actualizarFechas();
     setInterval(actualizarFechas, 60000);
   }
-
-  // Suscribir a Firestore para todos los roles
   suscribirRegistros();
   suscribirScoring();
 }
@@ -155,7 +166,11 @@ function doLogin() {
 window.doLogout = function() {
   if (state.unsubReg) state.unsubReg();
   if (state.unsubSco) state.unsubSco();
-  Object.assign(state, { role:null, currentUser:'', registros:[], scorings:[], turnoActivo:null, turnoScoringActivo:null });
+  Object.assign(state, {
+    role:null, currentUser:'', registros:[], scorings:[],
+    turnoActivo:null, turnoScoringActivo:null,
+    editandoId:null, editandoColeccion:null
+  });
   document.getElementById('screen-main').style.display = 'none';
   document.getElementById('screen-vis').style.display  = 'none';
   document.getElementById('screen-login').style.display = 'flex';
@@ -194,7 +209,7 @@ document.querySelectorAll('#screen-vis .vis-tab').forEach(tab => {
     const target = document.getElementById(tab.dataset.tab);
     if (target) {
       target.classList.add('active');
-      if (tab.dataset.tab === 'tab-vis-partes') renderHistorialVis();
+      if (tab.dataset.tab === 'tab-vis-partes')  renderHistorialVis();
       if (tab.dataset.tab === 'tab-vis-scoring') renderScoringVis();
     }
   });
@@ -224,16 +239,45 @@ document.querySelectorAll('.categoria-btn').forEach(btn => {
     document.querySelectorAll('.categoria-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     state.categoriaActiva = btn.dataset.cat;
-
-    ['envase','bolleria','molde'].forEach(cat => {
+    ['bolleria','molde'].forEach(cat => {
       const gEl = document.getElementById(`scoring-productos-${cat}`);
       const fEl = document.getElementById(`scoring-form-${cat}`);
-      const isActive = cat === btn.dataset.cat;
-      if (gEl) { gEl.classList.toggle('active', isActive); }
-      if (fEl) { fEl.classList.toggle('active', isActive); }
+      if (gEl) gEl.classList.toggle('active', cat === btn.dataset.cat);
+      if (fEl) fEl.classList.toggle('active', cat === btn.dataset.cat);
     });
   });
 });
+
+/* ══ BUSCADOR PRODUCTO SCORING ══ */
+function initBuscadorProducto(inputId, listId, productos) {
+  const input = document.getElementById(inputId);
+  const list  = document.getElementById(listId);
+  if (!input || !list) return;
+
+  function renderOpciones(filtro) {
+    const filtrados = productos.filter(p => p.toLowerCase().includes(filtro.toLowerCase()));
+    list.innerHTML = filtrados.map(p =>
+      `<div class="producto-option" data-val="${p}">${p}</div>`
+    ).join('');
+    list.style.display = filtrados.length ? 'block' : 'none';
+  }
+
+  input.addEventListener('input',  () => renderOpciones(input.value));
+  input.addEventListener('focus',  () => renderOpciones(input.value));
+  list.addEventListener('mousedown', e => {
+    const opt = e.target.closest('.producto-option');
+    if (opt) {
+      input.value = opt.dataset.val;
+      list.style.display = 'none';
+    }
+  });
+  document.addEventListener('click', e => {
+    if (!input.contains(e.target) && !list.contains(e.target)) list.style.display = 'none';
+  });
+}
+
+initBuscadorProducto('sc-bol-producto-input', 'sc-bol-producto-list', PRODUCTOS_BOLLERIA);
+initBuscadorProducto('sc-mol-producto-input', 'sc-mol-producto-list', PRODUCTOS_MOLDE);
 
 /* ══ SECCIONES ══ */
 document.querySelectorAll('.seccion-nav-btn').forEach(btn => {
@@ -282,9 +326,8 @@ document.getElementById('horn-producto')?.addEventListener('change', function() 
 
 /* ══ LEER FORMULARIO REGISTRO ══ */
 function leerFormulario() {
-  const camProd = leerCampo('cam-producto') === 'Otro' ? leerCampo('cam-producto-otro') : leerCampo('cam-producto');
+  const camProd  = leerCampo('cam-producto')  === 'Otro' ? leerCampo('cam-producto-otro')  : leerCampo('cam-producto');
   const hornProd = leerCampo('horn-producto') === 'Otro' ? leerCampo('horn-producto-otro') : leerCampo('horn-producto');
-
   return {
     recepcion: {
       empaque_estado: leerEstadoEnSec('sec-recepcion', 0),
@@ -313,25 +356,25 @@ function leerFormulario() {
       obs:      leerCampo('fab-obs'),
     },
     camara: {
-      set_temp:    leerCampo('cam-set-temp'),
-      temp:        leerCampo('cam-temp'),
-      set_hum:     leerCampo('cam-set-hum'),
-      hum:         leerCampo('cam-hum'),
-      producto:    camProd,
+      set_temp:     leerCampo('cam-set-temp'),
+      temp:         leerCampo('cam-temp'),
+      set_hum:      leerCampo('cam-set-hum'),
+      hum:          leerCampo('cam-hum'),
+      producto:     camProd,
       hora_entrada: leerCampo('cam-hora-entrada'),
       hora_salida:  leerCampo('cam-hora-salida'),
-      obs:         leerCampo('cam-obs'),
+      obs:          leerCampo('cam-obs'),
     },
     horno: {
-      set_z1:      leerCampo('horn-set-z1'),
-      z1:          leerCampo('horn-z1'),
-      set_z2:      leerCampo('horn-set-z2'),
-      z2:          leerCampo('horn-z2'),
-      producto:    hornProd,
-      tiempo_min:  leerCampo('horn-tiempo'),
-      t1:          state.transportes.t1 || '',
-      t2:          state.transportes.t2 || '',
-      t3:          state.transportes.t3 || '',
+      set_z1:        leerCampo('horn-set-z1'),
+      z1:            leerCampo('horn-z1'),
+      set_z2:        leerCampo('horn-set-z2'),
+      z2:            leerCampo('horn-z2'),
+      producto:      hornProd,
+      tiempo_min:    leerCampo('horn-tiempo'),
+      t1:            state.transportes.t1 || '',
+      t2:            state.transportes.t2 || '',
+      t3:            state.transportes.t3 || '',
       transport_obs: leerCampo('horn-transport-obs'),
     },
     enfriador: {
@@ -371,10 +414,14 @@ function limpiarFormulario() {
   document.querySelectorAll('#cam-producto-otro-wrap, #horn-producto-otro-wrap').forEach(el => el.style.display = 'none');
   state.turnoActivo = null;
   state.transportes = { t1: null, t2: null, t3: null };
+  state.editandoId = null;
+  state.editandoColeccion = null;
+  const btn = document.getElementById('btn-guardar-registro');
+  if (btn) btn.textContent = 'GUARDAR REGISTRO ✓';
   irSeccion('sec-recepcion');
 }
 
-/* ══ GUARDAR REGISTRO ══ */
+/* ══ GUARDAR / ACTUALIZAR REGISTRO ══ */
 document.getElementById('btn-guardar-registro').addEventListener('click', async () => {
   if (!state.turnoActivo) { showToast('Seleccioná el turno antes de guardar', true); return; }
   const datos = leerFormulario();
@@ -394,107 +441,130 @@ document.getElementById('btn-guardar-registro').addEventListener('click', async 
       seccionesConDatos.push(secLabels[key] || key);
   });
 
-  const ahora = new Date();
-  const registro = {
-    timestamp: ahora.getTime(), fecha: ahora.toISOString(),
-    turno: state.turnoActivo, usuario: state.currentUser, rol: state.role,
-    secciones: seccionesConDatos, tipo: 'registro', ...datos,
-  };
-
   const btn = document.getElementById('btn-guardar-registro');
   btn.disabled = true; btn.textContent = 'GUARDANDO...';
+
   try {
-    await addDoc(collection(db, COL_REG), registro);
-    showToast('✓ Registro guardado correctamente');
+    if (state.editandoId && state.editandoColeccion === COL_REG) {
+      const ahora = new Date();
+      await updateDoc(doc(db, COL_REG, state.editandoId), {
+        turno: state.turnoActivo,
+        secciones: seccionesConDatos,
+        editado: true,
+        fechaEdicion: ahora.toISOString(),
+        ...datos,
+      });
+      showToast('✓ Registro actualizado correctamente');
+    } else {
+      const ahora = new Date();
+      await addDoc(collection(db, COL_REG), {
+        timestamp: ahora.getTime(), fecha: ahora.toISOString(),
+        turno: state.turnoActivo, usuario: state.currentUser, rol: state.role,
+        secciones: seccionesConDatos, tipo: 'registro', ...datos,
+      });
+      showToast('✓ Registro guardado correctamente');
+    }
     limpiarFormulario();
   } catch (e) {
     showToast('Error al guardar: ' + e.message, true);
-  } finally {
-    btn.disabled = false; btn.textContent = 'GUARDAR REGISTRO ✓';
+    btn.disabled = false;
+    btn.textContent = state.editandoId ? 'ACTUALIZAR REGISTRO ✓' : 'GUARDAR REGISTRO ✓';
   }
 });
 
 /* ══ LEER SCORING ══ */
 function leerScoring() {
   const cat = state.categoriaActiva;
-  const base = { categoria: cat };
-
-  if (cat === 'envase') {
-    const prod = leerCampo('sc-env-producto');
-    return { ...base, producto: prod,
-      lote: leerCampo('sc-env-lote'), vto: leerCampo('sc-env-vto'),
-      peso: leerCampo('sc-env-peso'), color: leerCampo('sc-env-color'),
-      base_: leerCampo('sc-env-base'), altura: leerCampo('sc-env-altura'),
-      desgarro: leerCampo('sc-env-desgarro'), manchas: leerCampo('sc-env-manchas'),
-      harina: leerCampo('sc-env-harina'), estrias: leerCampo('sc-env-estrias'),
-      estivado: leerCampo('sc-env-estivado'), miga: leerCampo('sc-env-miga'),
-    };
-  }
   if (cat === 'bolleria') {
-    const prod = leerCampo('sc-bol-producto');
-    return { ...base, producto: prod,
-      lote: leerCampo('sc-bol-lote'), vto: leerCampo('sc-bol-vto'),
-      peso: leerCampo('sc-bol-peso'), color: leerCampo('sc-bol-color'),
-      base_: leerCampo('sc-bol-base'), altura: leerCampo('sc-bol-altura'),
-      desgarro: leerCampo('sc-bol-desgarro'), manchas: leerCampo('sc-bol-manchas'),
-      harina: leerCampo('sc-bol-harina'), estrias: leerCampo('sc-bol-estrias'),
-      estivado: leerCampo('sc-bol-estivado'), miga: leerCampo('sc-bol-miga'),
+    return { categoria: cat,
+      producto:  document.getElementById('sc-bol-producto-input')?.value.trim() || '',
+      lote:      leerCampo('sc-bol-lote'),
+      vto:       leerCampo('sc-bol-vto'),
+      peso:      leerCampo('sc-bol-peso'),
+      color:     leerCampo('sc-bol-color'),
+      base_:     leerCampo('sc-bol-base'),
+      altura:    leerCampo('sc-bol-altura'),
+      desgarro:  leerCampo('sc-bol-desgarro'),
+      manchas:   leerCampo('sc-bol-manchas'),
+      harina:    leerCampo('sc-bol-harina'),
+      estrias:   leerCampo('sc-bol-estrias'),
+      estivado:  leerCampo('sc-bol-estivado'),
+      miga:      leerCampo('sc-bol-miga'),
     };
   }
   if (cat === 'molde') {
-    const prod = leerCampo('sc-mol-producto');
-    return { ...base, producto: prod,
-      lote: leerCampo('sc-mol-lote'), vto: leerCampo('sc-mol-vto'),
-      peso: leerCampo('sc-mol-peso'), color: leerCampo('sc-mol-color'),
-      altura: leerCampo('sc-mol-altura'), forma: leerCampo('sc-mol-forma'),
-      estivado: leerCampo('sc-mol-estivado'), miga: leerCampo('sc-mol-miga'),
-      reb_c: leerCampo('sc-mol-reb-c'), reb_g: leerCampo('sc-mol-reb-g'),
-      coccion: leerCampo('sc-mol-coccion'), embollado: leerCampo('sc-mol-embollado'),
-      desgarro: leerCampo('sc-mol-desgarro'),
+    return { categoria: cat,
+      producto:  document.getElementById('sc-mol-producto-input')?.value.trim() || '',
+      lote:      leerCampo('sc-mol-lote'),
+      vto:       leerCampo('sc-mol-vto'),
+      peso:      leerCampo('sc-mol-peso'),
+      color:     leerCampo('sc-mol-color'),
+      altura:    leerCampo('sc-mol-altura'),
+      forma:     leerCampo('sc-mol-forma'),
+      estivado:  leerCampo('sc-mol-estivado'),
+      miga:      leerCampo('sc-mol-miga'),
+      reb_c:     leerCampo('sc-mol-reb-c'),
+      reb_g:     leerCampo('sc-mol-reb-g'),
+      coccion:   leerCampo('sc-mol-coccion'),
+      embollado: leerCampo('sc-mol-embollado'),
+      desgarro:  leerCampo('sc-mol-desgarro'),
     };
   }
-  return base;
+  return { categoria: cat };
 }
 
 function limpiarScoring() {
-  document.querySelectorAll('#tab-scoring input[type="text"], #tab-scoring select')
-    .forEach(el => el.value = '');
+  document.querySelectorAll('#tab-scoring input[type="text"]').forEach(el => el.value = '');
   document.querySelectorAll('.turno-btn.turno-scoring.selected').forEach(el => el.classList.remove('selected'));
+  document.querySelectorAll('.producto-dropdown').forEach(el => el.style.display = 'none');
   state.turnoScoringActivo = null;
+  state.editandoId = null;
+  state.editandoColeccion = null;
+  const btn = document.getElementById('btn-guardar-scoring');
+  if (btn) btn.textContent = 'GUARDAR SCORING ✓';
 }
 
-/* ══ GUARDAR SCORING ══ */
+/* ══ GUARDAR / ACTUALIZAR SCORING ══ */
 document.getElementById('btn-guardar-scoring').addEventListener('click', async () => {
   if (!state.turnoScoringActivo) { showToast('Seleccioná el turno', true); return; }
   const datos = leerScoring();
   if (!datos.producto) { showToast('Seleccioná un producto', true); return; }
-
   const tieneDatos = Object.entries(datos)
     .filter(([k]) => !['categoria','producto'].includes(k))
     .some(([, v]) => v && v.trim && v.trim() !== '');
   if (!tieneDatos) { showToast('Completá al menos un campo del scoring', true); return; }
 
-  const ahora = new Date();
-  const doc = {
-    timestamp: ahora.getTime(), fecha: ahora.toISOString(),
-    turno: state.turnoScoringActivo, usuario: state.currentUser, rol: state.role,
-    tipo: 'scoring', ...datos,
-  };
-
   const btn = document.getElementById('btn-guardar-scoring');
   btn.disabled = true; btn.textContent = 'GUARDANDO...';
+
   try {
-    await addDoc(collection(db, COL_SCORING), doc);
-    showToast('✓ Scoring guardado correctamente');
+    if (state.editandoId && state.editandoColeccion === COL_SCORING) {
+      const ahora = new Date();
+      await updateDoc(doc(db, COL_SCORING, state.editandoId), {
+        turno: state.turnoScoringActivo,
+        editado: true,
+        fechaEdicion: ahora.toISOString(),
+        ...datos,
+      });
+      showToast('✓ Scoring actualizado correctamente');
+    } else {
+      const ahora = new Date();
+      await addDoc(collection(db, COL_SCORING), {
+        timestamp: ahora.getTime(), fecha: ahora.toISOString(),
+        turno: state.turnoScoringActivo, usuario: state.currentUser, rol: state.role,
+        tipo: 'scoring', ...datos,
+      });
+      showToast('✓ Scoring guardado correctamente');
+    }
     limpiarScoring();
   } catch (e) {
     showToast('Error al guardar: ' + e.message, true);
-  } finally {
-    btn.disabled = false; btn.textContent = 'GUARDAR SCORING ✓';
+    btn.disabled = false;
+    btn.textContent = state.editandoId ? 'ACTUALIZAR SCORING ✓' : 'GUARDAR SCORING ✓';
   }
 });
 
-/* ══ HISTORIAL TIPO (registros / scoring) ══ */
+/* ══ HISTORIAL TIPO ══ */
 document.querySelectorAll('.filtro-tipo-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.filtro-tipo-btn').forEach(b => b.classList.remove('active'));
@@ -516,7 +586,7 @@ document.getElementById('vis-btn-limpiar')?.addEventListener('click', () => {
   renderHistorialVis();
 });
 
-/* ══ RENDER HISTORIAL ══ */
+/* ══ HELPERS RENDER ══ */
 function getFilters(prefix = '') {
   const p = prefix ? prefix + '-' : '';
   return {
@@ -540,60 +610,70 @@ function renderHistorial() {
   const list = document.getElementById('historial-list');
   if (!list) return;
   const f = getFilters();
-  const tipo = state.historialTipo;
-
-  if (tipo === 'registros') {
+  if (state.historialTipo === 'registros') {
     const items = filtrarItems(state.registros, f);
-    list.innerHTML = items.length ? items.map(r => buildRegistroCard(r)).join('') : emptyMsg();
+    list.innerHTML = items.length ? items.map(r => buildRegistroCard(r, true)).join('') : emptyMsg();
   } else {
     const items = filtrarItems(state.scorings, f);
-    list.innerHTML = items.length ? items.map(s => buildScoringCard(s)).join('') : emptyMsg();
+    list.innerHTML = items.length ? items.map(s => buildScoringCard(s, true)).join('') : emptyMsg();
   }
 }
 
 function renderHistorialVis() {
   const list = document.getElementById('vis-historial-list');
   if (!list) return;
-  const f = getFilters('vis');
-  const items = filtrarItems(state.registros, f);
-  list.innerHTML = items.length ? items.map(r => buildRegistroCard(r)).join('') : emptyMsg();
+  const items = filtrarItems(state.registros, getFilters('vis'));
+  list.innerHTML = items.length ? items.map(r => buildRegistroCard(r, false)).join('') : emptyMsg();
 }
 
 function renderScoringVis() {
   const list = document.getElementById('vis-scoring-list');
   if (!list) return;
-  const items = [...state.scorings];
-  list.innerHTML = items.length ? items.map(s => buildScoringCard(s)).join('') : emptyMsg();
+  list.innerHTML = state.scorings.length ? state.scorings.map(s => buildScoringCard(s, false)).join('') : emptyMsg();
 }
 
 const turnoLabel = { 'mañana':'MAÑANA', 'tarde':'TARDE', 'noche':'NOCHE' };
-const catLabel   = { 'envase':'ENVASE', 'bolleria':'BOLLERÍA', 'molde':'PAN DE MOLDE' };
+const catLabel   = { 'bolleria':'BOLLERÍA', 'molde':'PAN DE MOLDE' };
 
-function buildRegistroCard(r) {
+function buildRegistroCard(r, showCrud) {
+  const crudHtml = (showCrud && canCRUD()) ? `
+    <div class="crud-btns" onclick="event.stopPropagation()">
+      <button class="crud-btn edit" onclick="editarRegistro('${r.firestoreId}')">✏️ Editar</button>
+      <button class="crud-btn del"  onclick="confirmarEliminar('${r.firestoreId}','${COL_REG}')">🗑️ Eliminar</button>
+    </div>` : '';
+  const editTag = r.editado ? `<span class="badge-editado">editado</span>` : '';
   return `
     <div class="registro-card" onclick="verRegistro('${r.firestoreId}')">
       <div class="registro-header">
-        <div class="registro-titulo">Registro de Calidad</div>
+        <div class="registro-titulo">Registro de Calidad ${editTag}</div>
         <span class="badge-turno ${r.turno}">${turnoLabel[r.turno] || r.turno}</span>
       </div>
       <div class="registro-meta">${formatFecha(r.fecha)} · ${r.usuario}</div>
       <div class="secciones-completadas">
         ${(r.secciones||[]).map(s => `<span class="sec-tag">${s}</span>`).join('')}
       </div>
+      ${crudHtml}
     </div>`;
 }
 
-function buildScoringCard(s) {
+function buildScoringCard(s, showCrud) {
+  const crudHtml = (showCrud && canCRUD()) ? `
+    <div class="crud-btns" onclick="event.stopPropagation()">
+      <button class="crud-btn edit" onclick="editarScoring('${s.firestoreId}')">✏️ Editar</button>
+      <button class="crud-btn del"  onclick="confirmarEliminar('${s.firestoreId}','${COL_SCORING}')">🗑️ Eliminar</button>
+    </div>` : '';
+  const editTag = s.editado ? `<span class="badge-editado">editado</span>` : '';
   return `
     <div class="registro-card scoring-card" onclick="verScoring('${s.firestoreId}')">
       <div class="registro-header">
-        <div class="registro-titulo">${s.producto || 'Scoring'}</div>
+        <div class="registro-titulo">${s.producto || 'Scoring'} ${editTag}</div>
         <div style="display:flex;gap:6px;align-items:center">
           <span class="badge-turno ${s.turno}">${turnoLabel[s.turno] || s.turno}</span>
           <span class="badge-cat">${catLabel[s.categoria] || s.categoria}</span>
         </div>
       </div>
       <div class="registro-meta">${formatFecha(s.fecha)} · ${s.usuario}</div>
+      ${crudHtml}
     </div>`;
 }
 
@@ -601,14 +681,185 @@ function emptyMsg() {
   return '<div class="empty-msg">No hay registros para los filtros aplicados.</div>';
 }
 
-/* ══ MODAL REGISTRO ══ */
+/* ══ CRUD — EDITAR REGISTRO ══ */
+window.editarRegistro = function(firestoreId) {
+  const r = state.registros.find(x => x.firestoreId === firestoreId);
+  if (!r) return;
+
+  // Ir al tab nuevo registro
+  document.querySelectorAll('#tabs-main .vis-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#screen-main .vis-tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector('#tabs-main .vis-tab[data-tab="tab-nuevo"]').classList.add('active');
+  document.getElementById('tab-nuevo').classList.add('active');
+
+  // Turno
+  state.turnoActivo = r.turno;
+  document.querySelectorAll('.turno-btn:not(.turno-scoring)').forEach(b => {
+    b.classList.toggle('selected', b.dataset.turno === r.turno);
+  });
+
+  function setEstado(secId, fieldIndex, val) {
+    const campos = document.querySelectorAll(`#${secId} .field`);
+    if (!campos[fieldIndex]) return;
+    campos[fieldIndex].querySelectorAll('.estado-check-btn').forEach(b => {
+      b.classList.toggle('selected', b.dataset.val === val);
+    });
+  }
+
+  // Recepción
+  setEstado('sec-recepcion', 0, r.recepcion?.empaque_estado);
+  setEstado('sec-recepcion', 2, r.recepcion?.vto_estado);
+  [['rec-empaque-obs', r.recepcion?.empaque_obs], ['rec-vto-obs', r.recepcion?.vto_obs]].forEach(([id, val]) => {
+    const el = document.getElementById(id); if (el) el.value = val || '';
+  });
+
+  // Formulación
+  setEstado('sec-formulacion', 0, r.formulacion?.stock_estado);
+  setEstado('sec-formulacion', 2, r.formulacion?.sector_estado);
+  [['form-stock-obs', r.formulacion?.stock_obs], ['form-sector-obs', r.formulacion?.sector_obs], ['form-pesos', r.formulacion?.pesos]].forEach(([id, val]) => {
+    const el = document.getElementById(id); if (el) el.value = val || '';
+  });
+
+  // Fabricación
+  if (r.fabricacion?.molino) {
+    document.querySelectorAll(`input[name="fab-molino"]`).forEach(el => { el.checked = el.value === r.fabricacion.molino; });
+  }
+  Object.entries({ 'fab-gluten':r.fabricacion?.gluten, 'fab-silo1':r.fabricacion?.silo1, 'fab-silo2':r.fabricacion?.silo2,
+    'fab-aceite1':r.fabricacion?.aceite1, 'fab-aceite2':r.fabricacion?.aceite2, 'fab-frio':r.fabricacion?.frio,
+    'fab-balanza':r.fabricacion?.balanza, 'fab-tagua':r.fabricacion?.tagua, 'fab-producto':r.fabricacion?.producto, 'fab-obs':r.fabricacion?.obs
+  }).forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
+
+  // Cámara
+  Object.entries({ 'cam-set-temp':r.camara?.set_temp, 'cam-temp':r.camara?.temp, 'cam-set-hum':r.camara?.set_hum,
+    'cam-hum':r.camara?.hum, 'cam-hora-entrada':r.camara?.hora_entrada, 'cam-hora-salida':r.camara?.hora_salida, 'cam-obs':r.camara?.obs
+  }).forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
+  const camProd = document.getElementById('cam-producto');
+  if (camProd && r.camara?.producto) {
+    const exists = [...camProd.options].some(o => o.value === r.camara.producto);
+    if (exists) { camProd.value = r.camara.producto; }
+    else { camProd.value = 'Otro'; document.getElementById('cam-producto-otro-wrap').style.display = 'block'; document.getElementById('cam-producto-otro').value = r.camara.producto; }
+  }
+
+  // Horno
+  Object.entries({ 'horn-set-z1':r.horno?.set_z1, 'horn-z1':r.horno?.z1, 'horn-set-z2':r.horno?.set_z2,
+    'horn-z2':r.horno?.z2, 'horn-tiempo':r.horno?.tiempo_min, 'horn-transport-obs':r.horno?.transport_obs
+  }).forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
+  const hornProd = document.getElementById('horn-producto');
+  if (hornProd && r.horno?.producto) {
+    const exists = [...hornProd.options].some(o => o.value === r.horno.producto);
+    if (exists) { hornProd.value = r.horno.producto; }
+    else { hornProd.value = 'Otro'; document.getElementById('horn-producto-otro-wrap').style.display = 'block'; document.getElementById('horn-producto-otro').value = r.horno.producto; }
+  }
+  ['t1','t2','t3'].forEach(t => {
+    state.transportes[t] = r.horno?.[t] || null;
+    document.querySelectorAll(`.transport-btn[data-t="${t}"]`).forEach(b => { b.classList.toggle('selected', b.dataset.v === r.horno?.[t]); });
+  });
+
+  // Enfriador
+  Object.entries({ 'enf-receta':r.enfriador?.receta, 'enf-desmoldeador':r.enfriador?.desmoldeador })
+    .forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
+
+  // Detector
+  Object.entries({ 'det-receta':r.detector?.receta, 'det-sensibilidad':r.detector?.sensibilidad,
+    'det-hora-cambio':r.detector?.hora_cambio, 'det-patrones':r.detector?.patrones })
+    .forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
+
+  // Envase
+  Object.entries({ 'env-producto':r.envase?.producto, 'env-paquete':r.envase?.paquete,
+    'env-lote':r.envase?.lote, 'env-vto':r.envase?.vto, 'env-obs':r.envase?.obs })
+    .forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
+
+  // Bolsas
+  Object.entries({ 'bol-producto':r.bolsas?.producto, 'bol-bobinado':r.bolsas?.bobinado,
+    'bol-taco':r.bolsas?.taco, 'bol-corte-circ':r.bolsas?.corte_circ, 'bol-corte-rect':r.bolsas?.corte_rect })
+    .forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
+
+  state.editandoId = firestoreId;
+  state.editandoColeccion = COL_REG;
+  document.getElementById('btn-guardar-registro').textContent = 'ACTUALIZAR REGISTRO ✓';
+  irSeccion('sec-recepcion');
+  showToast('Editando registro — modificá y guardá');
+};
+
+/* ══ CRUD — EDITAR SCORING ══ */
+window.editarScoring = function(firestoreId) {
+  const s = state.scorings.find(x => x.firestoreId === firestoreId);
+  if (!s) return;
+
+  // Ir al tab scoring
+  document.querySelectorAll('#tabs-main .vis-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#screen-main .vis-tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector('#tabs-main .vis-tab[data-tab="tab-scoring"]').classList.add('active');
+  document.getElementById('tab-scoring').classList.add('active');
+
+  // Turno
+  state.turnoScoringActivo = s.turno;
+  document.querySelectorAll('.turno-btn.turno-scoring').forEach(b => {
+    b.classList.toggle('selected', b.dataset.turno === s.turno);
+  });
+
+  // Categoría
+  state.categoriaActiva = s.categoria;
+  document.querySelectorAll('.categoria-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === s.categoria));
+  ['bolleria','molde'].forEach(cat => {
+    document.getElementById(`scoring-productos-${cat}`)?.classList.toggle('active', cat === s.categoria);
+    document.getElementById(`scoring-form-${cat}`)?.classList.toggle('active', cat === s.categoria);
+  });
+
+  // Campos bollería
+  if (s.categoria === 'bolleria') {
+    const inp = document.getElementById('sc-bol-producto-input');
+    if (inp) inp.value = s.producto || '';
+    Object.entries({ 'sc-bol-lote':s.lote, 'sc-bol-vto':s.vto, 'sc-bol-peso':s.peso, 'sc-bol-color':s.color,
+      'sc-bol-base':s.base_, 'sc-bol-altura':s.altura, 'sc-bol-desgarro':s.desgarro, 'sc-bol-manchas':s.manchas,
+      'sc-bol-harina':s.harina, 'sc-bol-estrias':s.estrias, 'sc-bol-estivado':s.estivado, 'sc-bol-miga':s.miga })
+      .forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
+  }
+
+  // Campos molde
+  if (s.categoria === 'molde') {
+    const inp = document.getElementById('sc-mol-producto-input');
+    if (inp) inp.value = s.producto || '';
+    Object.entries({ 'sc-mol-lote':s.lote, 'sc-mol-vto':s.vto, 'sc-mol-peso':s.peso, 'sc-mol-color':s.color,
+      'sc-mol-altura':s.altura, 'sc-mol-forma':s.forma, 'sc-mol-estivado':s.estivado, 'sc-mol-miga':s.miga,
+      'sc-mol-reb-c':s.reb_c, 'sc-mol-reb-g':s.reb_g, 'sc-mol-coccion':s.coccion, 'sc-mol-embollado':s.embollado, 'sc-mol-desgarro':s.desgarro })
+      .forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
+  }
+
+  state.editandoId = firestoreId;
+  state.editandoColeccion = COL_SCORING;
+  document.getElementById('btn-guardar-scoring').textContent = 'ACTUALIZAR SCORING ✓';
+  showToast('Editando scoring — modificá y guardá');
+};
+
+/* ══ CRUD — CONFIRMAR ELIMINAR ══ */
+window.confirmarEliminar = function(firestoreId, coleccion) {
+  const overlay = document.getElementById('confirm-overlay');
+  const msg     = document.getElementById('confirm-msg');
+  if (!overlay || !msg) return;
+  const tipo = coleccion === COL_REG ? 'registro' : 'scoring';
+  msg.textContent = `¿Eliminás este ${tipo}? Esta acción no se puede deshacer.`;
+  overlay.style.display = 'flex';
+  document.getElementById('confirm-si').onclick = async () => {
+    overlay.style.display = 'none';
+    try {
+      await deleteDoc(doc(db, coleccion, firestoreId));
+      showToast('✓ Eliminado correctamente');
+    } catch (e) {
+      showToast('Error al eliminar: ' + e.message, true);
+    }
+  };
+  document.getElementById('confirm-no').onclick = () => { overlay.style.display = 'none'; };
+};
+
+/* ══ MODAL VER REGISTRO ══ */
 window.verRegistro = function(firestoreId) {
   const r = state.registros.find(x => x.firestoreId === firestoreId);
   if (!r) return;
 
   document.getElementById('modal-titulo').textContent = 'Registro de Calidad';
   document.getElementById('modal-meta').textContent   =
-    `${formatFecha(r.fecha)} · ${r.usuario} · Turno ${r.turno}`;
+    `${formatFecha(r.fecha)} · ${r.usuario} · Turno ${r.turno}${r.editado ? ' · (editado)' : ''}`;
 
   const colorVal = (v) => {
     if (!v) return 'modal-campo-valor';
@@ -617,25 +868,17 @@ window.verRegistro = function(firestoreId) {
     if (['Malo','Sin stock','Vencido'].includes(v)) return 'modal-campo-valor danger';
     return 'modal-campo-valor';
   };
-
   const tColor = (v) => {
     if (!v) return 'modal-campo-valor';
     if (v === 'OK')    return 'modal-campo-valor ok-t';
     if (v === 'NO OK') return 'modal-campo-valor nok-t';
     return 'modal-campo-valor';
   };
-
   const campo = (label, val, cls) => val
-    ? `<div class="modal-campo">
-        <div class="modal-campo-label">${label}</div>
-        <div class="${cls || colorVal(val)}">${val}</div>
-       </div>` : '';
-
-  const seccion = (titulo, campos) => {
-    const contenido = campos.filter(Boolean).join('');
-    return contenido
-      ? `<div class="modal-seccion"><div class="modal-seccion-title">${titulo}</div>${contenido}</div>`
-      : '';
+    ? `<div class="modal-campo"><div class="modal-campo-label">${label}</div><div class="${cls || colorVal(val)}">${val}</div></div>` : '';
+  const seccion = (titulo, cs) => {
+    const c = cs.filter(Boolean).join('');
+    return c ? `<div class="modal-seccion"><div class="modal-seccion-title">${titulo}</div>${c}</div>` : '';
   };
 
   document.getElementById('modal-body').innerHTML = [
@@ -716,39 +959,29 @@ window.verRegistro = function(firestoreId) {
   document.getElementById('modal-overlay').style.display = 'flex';
 };
 
-/* ══ MODAL SCORING ══ */
+/* ══ MODAL VER SCORING ══ */
 window.verScoring = function(firestoreId) {
   const s = state.scorings.find(x => x.firestoreId === firestoreId);
   if (!s) return;
 
-  document.getElementById('modal-titulo').textContent =
-    `Scoring — ${catLabel[s.categoria] || s.categoria}`;
+  document.getElementById('modal-titulo').textContent = `Scoring — ${catLabel[s.categoria] || s.categoria}`;
   document.getElementById('modal-meta').textContent =
-    `${formatFecha(s.fecha)} · ${s.usuario} · Turno ${s.turno} · ${s.producto}`;
+    `${formatFecha(s.fecha)} · ${s.usuario} · Turno ${s.turno} · ${s.producto}${s.editado ? ' · (editado)' : ''}`;
 
   const campo = (label, val) => val
-    ? `<div class="modal-campo">
-        <div class="modal-campo-label">${label}</div>
-        <div class="modal-campo-valor">${val}</div>
-       </div>` : '';
+    ? `<div class="modal-campo"><div class="modal-campo-label">${label}</div><div class="modal-campo-valor">${val}</div></div>` : '';
 
-  const campos = [];
-  const map = {
-    lote:'Lote', vto:'Vencimiento', peso:'Peso', color:'Color',
-    base_:'Base', altura:'Altura', desgarro:'Desgarro', manchas:'Manchas',
-    harina:'Harina', estrias:'Estrías', estivado:'Estivado', miga:'Miga',
-    forma:'Forma', reb_c:'Rebanadas chicas', reb_g:'Rebanadas grandes',
-    coccion:'Cocción', embollado:'Embollado',
-  };
-  Object.entries(map).forEach(([key, label]) => {
-    if (s[key]) campos.push(campo(label, s[key]));
-  });
+  const mapBolleria = { lote:'Lote', vto:'Vencimiento', peso:'Peso', color:'Color', base_:'Base', altura:'Altura',
+    desgarro:'Desgarro', manchas:'Manchas', harina:'Harina', estrias:'Estrías', estivado:'Estivado', miga:'Miga' };
+  const mapMolde = { lote:'Lote', vto:'Vencimiento', peso:'Peso', color:'Color', altura:'Altura', forma:'Forma',
+    estivado:'Estivado', miga:'Miga', reb_c:'Rebanadas chicas', reb_g:'Rebanadas grandes',
+    coccion:'Cocción', embollado:'Embollado', desgarro:'Desgarro' };
+
+  const map = s.categoria === 'molde' ? mapMolde : mapBolleria;
+  const campos = Object.entries(map).map(([k, l]) => campo(l, s[k])).join('');
 
   document.getElementById('modal-body').innerHTML =
-    `<div class="modal-seccion">
-      <div class="modal-seccion-title">${s.producto}</div>
-      ${campos.join('')}
-     </div>`;
+    `<div class="modal-seccion"><div class="modal-seccion-title">${s.producto}</div>${campos}</div>`;
 
   document.getElementById('modal-overlay').style.display = 'flex';
 };
@@ -756,7 +989,6 @@ window.verScoring = function(firestoreId) {
 window.cerrarModal = function() {
   document.getElementById('modal-overlay').style.display = 'none';
 };
-
 document.getElementById('modal-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('modal-overlay')) cerrarModal();
 });
