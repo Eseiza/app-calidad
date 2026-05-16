@@ -214,4 +214,17 @@ header { background: var(--surface); border-bottom: 3px solid var(--accent); pad
   .turno-grid    { grid-template-columns: 1fr; gap: 6px; }
   .categoria-grid { grid-template-columns: 1fr; }
   .transport-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+/* CRUD */
+.crud-btns { display:flex; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+.crud-btn { padding:6px 14px; font-size:11px; font-family:var(--font-mono); font-weight:700; cursor:pointer; border:1px solid var(--border); background:var(--surface2); letter-spacing:1px; transition:all .15s; }
+.crud-btn.edit:hover { border-color:var(--accent); color:var(--accent); }
+.crud-btn.del:hover  { border-color:var(--accent2); color:var(--accent2); }
+.badge-editado { font-size:9px; font-family:var(--font-mono); background:rgba(200,134,10,.15); color:var(--amber); padding:2px 6px; margin-left:6px; vertical-align:middle; }
+
+/* Buscador producto scoring */
+.producto-search-wrap { position:relative; }
+.producto-search { width:100%; }
+.producto-dropdown { position:absolute; top:100%; left:0; right:0; background:var(--surface2); border:1px solid var(--accent); z-index:50; max-height:180px; overflow-y:auto; display:none; }
+.producto-option { padding:10px 14px; font-size:14px; cursor:pointer; color:var(--text); transition:background .15s; }
+.producto-option:hover { background:rgba(55,138,221,.15); color:var(--accent); }
 }
