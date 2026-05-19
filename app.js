@@ -42,7 +42,6 @@ const state = {
   turnoActivo: null,
   turnoScoringActivo: null,
   categoriaActiva: 'bolleria',
-  historialTipo: 'registros',
   // transportes: estado por transporte (OK o OBS)
   transportes: { t1: null, t2: null, t3: null, t4: null },
   // camara: tipo de producto seleccionado
@@ -252,7 +251,7 @@ document.querySelectorAll('.categoria-btn').forEach(btn => {
     document.querySelectorAll('.categoria-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     state.categoriaActiva = btn.dataset.cat;
-    ['envase','bolleria','molde'].forEach(cat => {
+    ['bolleria','molde'].forEach(cat => {
       const gEl = document.getElementById(`scoring-productos-${cat}`);
       const fEl = document.getElementById(`scoring-form-${cat}`);
       if (gEl) gEl.classList.toggle('active', cat === btn.dataset.cat);
@@ -554,23 +553,6 @@ document.getElementById('btn-guardar-registro').addEventListener('click', async 
 /* ══ LEER SCORING ══ */
 function leerScoring() {
   const cat = state.categoriaActiva;
-  if (cat === 'envase') {
-    return { categoria: cat,
-      producto:  leerCampo('sc-env-producto'),
-      lote:      leerCampo('sc-env-lote'),
-      vto:       leerCampo('sc-env-vto'),
-      peso:      leerCampo('sc-env-peso'),
-      color:     leerCampo('sc-env-color'),
-      base_:     leerCampo('sc-env-base'),
-      altura:    leerCampo('sc-env-altura'),
-      desgarro:  leerCampo('sc-env-desgarro'),
-      manchas:   leerCampo('sc-env-manchas'),
-      harina:    leerCampo('sc-env-harina'),
-      estrias:   leerCampo('sc-env-estrias'),
-      estivado:  leerCampo('sc-env-estivado'),
-      miga:      leerCampo('sc-env-miga'),
-    };
-  }
   if (cat === 'bolleria') {
     return { categoria: cat,
       producto:  leerCampo('sc-bol-producto'),
@@ -728,7 +710,7 @@ function renderScoringVis() {
 }
 
 const turnoLabel = { 'mañana':'MAÑANA', 'tarde':'TARDE', 'noche':'NOCHE' };
-const catLabel   = { 'envase':'ENVASE', 'bolleria':'BOLLERÍA', 'molde':'PAN DE MOLDE' };
+const catLabel   = { 'bolleria':'BOLLERÍA', 'molde':'PAN DE MOLDE' };
 
 function buildRegistroCard(r, showCrud) {
   const crudHtml = (showCrud && canCRUD()) ? `
@@ -923,19 +905,10 @@ window.editarScoring = function(firestoreId) {
 
   state.categoriaActiva = s.categoria;
   document.querySelectorAll('.categoria-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === s.categoria));
-  ['envase','bolleria','molde'].forEach(cat => {
+  ['bolleria','molde'].forEach(cat => {
     document.getElementById(`scoring-productos-${cat}`)?.classList.toggle('active', cat === s.categoria);
     document.getElementById(`scoring-form-${cat}`)?.classList.toggle('active', cat === s.categoria);
   });
-
-  if (s.categoria === 'envase') {
-    const sel = document.getElementById('sc-env-producto');
-    if (sel) sel.value = s.producto || '';
-    Object.entries({ 'sc-env-lote':s.lote, 'sc-env-vto':s.vto, 'sc-env-peso':s.peso, 'sc-env-color':s.color,
-      'sc-env-base':s.base_, 'sc-env-altura':s.altura, 'sc-env-desgarro':s.desgarro, 'sc-env-manchas':s.manchas,
-      'sc-env-harina':s.harina, 'sc-env-estrias':s.estrias, 'sc-env-estivado':s.estivado, 'sc-env-miga':s.miga })
-      .forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
-  }
 
   if (s.categoria === 'bolleria') {
     const sel = document.getElementById('sc-bol-producto');
@@ -1130,15 +1103,13 @@ window.verScoring = function(firestoreId) {
   const campo = (label, val) => val
     ? `<div class="modal-campo"><div class="modal-campo-label">${label}</div><div class="modal-campo-valor">${val}</div></div>` : '';
 
-  const mapEnvase   = { lote:'Lote', vto:'Vencimiento', peso:'Peso', color:'Color', base_:'Base', altura:'Altura',
-    desgarro:'Desgarro', manchas:'Manchas', harina:'Harina', estrias:'Estrías', estivado:'Estivado', miga:'Miga' };
   const mapBolleria = { lote:'Lote', vto:'Vencimiento', peso:'Peso', color:'Color', base_:'Base', altura:'Altura',
     desgarro:'Desgarro', manchas:'Manchas', harina:'Harina', estrias:'Estrías', estivado:'Estivado', miga:'Miga' };
   const mapMolde    = { lote:'Lote', vto:'Vencimiento', peso:'Peso', color:'Color', altura:'Altura', forma:'Forma',
     estivado:'Estivado', miga:'Miga', reb_c:'Rebanadas chicas', reb_g:'Rebanadas grandes',
     coccion:'Cocción', embollado:'Embollado', desgarro:'Desgarro' };
 
-  const map = s.categoria === 'molde' ? mapMolde : s.categoria === 'bolleria' ? mapBolleria : mapEnvase;
+  const map = s.categoria === 'molde' ? mapMolde : mapBolleria;
   const campos = Object.entries(map).map(([k, l]) => campo(l, s[k])).join('');
 
   document.getElementById('modal-body').innerHTML =
