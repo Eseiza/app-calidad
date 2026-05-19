@@ -70,22 +70,48 @@ select optgroup { font-family: var(--font-mono); font-size: 10px; color: var(--m
 .estado-check-btn.selected[data-val="Regular"], .estado-check-btn.selected[data-val="Bajo"], .estado-check-btn.selected[data-val="Próximo"] { border-color: var(--amber); background: rgba(200,134,10,.12); color: var(--amber); }
 .estado-check-btn.selected[data-val="Malo"], .estado-check-btn.selected[data-val="Sin stock"], .estado-check-btn.selected[data-val="Vencido"] { border-color: var(--accent2); background: rgba(232,69,44,.12); color: var(--accent2); }
 
+/* ══ TIPO PRODUCTO (cámara) ══ */
+.tipo-producto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tipo-producto-btn { background: var(--surface2); border: 2px solid var(--border); color: var(--muted); padding: 14px 10px; text-align: center; cursor: pointer; font-size: 13px; font-weight: 600; transition: all .2s; user-select: none; }
+.tipo-producto-btn.selected { border-color: var(--accent); background: rgba(55,138,221,.12); color: var(--accent); }
+
+/* ══ HORA LEVADO ══ */
+.hora-levado-wrap { display: flex; align-items: center; gap: 6px; }
+.hora-levado-part { width: 72px !important; text-align: center; font-family: var(--font-mono); font-size: 22px; letter-spacing: 2px; padding: 10px 8px; }
+.hora-levado-sep { font-family: var(--font-mono); font-size: 24px; color: var(--muted); line-height: 1; }
+.hora-levado-label { font-family: var(--font-mono); font-size: 14px; color: var(--muted); letter-spacing: 1px; margin-left: 4px; }
+
 /* ══ TRANSPORTES CHECKLIST ══ */
-.transport-grid { display: flex; flex-direction: column; gap: 8px; }
-.transport-row { display: flex; align-items: center; justify-content: space-between; background: var(--surface2); border: 1px solid var(--border); padding: 10px 14px; }
+.transport-grid { display: flex; flex-direction: column; gap: 6px; }
+.transport-row-ext { border: 1px solid var(--border); overflow: hidden; }
+.transport-row { display: flex; align-items: center; justify-content: space-between; background: var(--surface2); padding: 10px 14px; }
 .transport-label { font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: 1px; }
 .transport-btns { display: flex; gap: 6px; }
-.transport-btn { padding: 6px 16px; font-size: 11px; font-weight: 700; font-family: var(--font-mono); cursor: pointer; border: 2px solid var(--border); color: var(--muted); background: var(--bg); letter-spacing: 1px; transition: all .15s; user-select: none; }
-.transport-btn.ok.selected  { border-color: var(--green); background: rgba(76,175,80,.15); color: var(--green); }
-.transport-btn.nok.selected { border-color: var(--accent2); background: rgba(232,69,44,.15); color: var(--accent2); }
+.transport-btn { padding: 6px 14px; font-size: 11px; font-weight: 700; font-family: var(--font-mono); cursor: pointer; border: 2px solid var(--border); color: var(--muted); background: var(--bg); letter-spacing: 1px; transition: all .15s; user-select: none; }
+.transport-btn.ok.selected  { border-color: var(--green);   background: rgba(76,175,80,.15);  color: var(--green); }
+.transport-btn.nok.selected { border-color: var(--amber);   background: rgba(200,134,10,.15); color: var(--amber); }
 .transport-btn:hover:not(.selected) { border-color: var(--muted); color: var(--text); }
+.transport-obs-wrap { background: var(--bg); border-top: 1px solid var(--border); }
+.transport-obs-input { width: 100%; background: transparent; border: none; border-bottom: none; color: var(--text); padding: 10px 14px; font-size: 14px; font-family: var(--font-body); outline: none; resize: vertical; min-height: 60px; }
+.transport-obs-input:focus { border: none; outline: none; }
+
+/* ══ MARCA ROLLOS ══ */
+.marca-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.marca-btn { background: var(--surface2); border: 2px solid var(--border); color: var(--muted); padding: 12px 10px; text-align: center; cursor: pointer; font-size: 13px; font-weight: 600; font-family: var(--font-mono); letter-spacing: 1px; transition: all .2s; user-select: none; }
+.marca-btn.selected { border-color: var(--accent); background: rgba(55,138,221,.12); color: var(--accent); }
+
+/* ══ OK / OBS ══ */
+.ok-obs-row { display: flex; gap: 8px; margin-bottom: 6px; }
+.ok-obs-btn { flex: 1; padding: 10px 6px; text-align: center; cursor: pointer; font-size: 12px; font-weight: 700; font-family: var(--font-mono); border: 2px solid var(--border); background: var(--surface2); color: var(--muted); letter-spacing: 0.5px; transition: all .15s; user-select: none; }
+.ok-obs-btn.ok-btn.selected   { border-color: var(--green); background: rgba(76,175,80,.12);  color: var(--green); }
+.ok-obs-btn.obs-btn.selected  { border-color: var(--amber); background: rgba(200,134,10,.12); color: var(--amber); }
+.ok-obs-detail { margin-top: 6px; }
 
 /* ══ CATEGORÍA SCORING ══ */
 .categoria-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
 .categoria-btn { background: var(--surface2); border: 2px solid var(--border); color: var(--muted); padding: 12px 6px; text-align: center; cursor: pointer; font-size: 11px; font-weight: 700; font-family: var(--font-mono); letter-spacing: 1px; transition: all .2s; user-select: none; }
 .categoria-btn.active { border-color: var(--accent); background: rgba(55,138,221,.12); color: var(--accent); }
 
-/* Grupos dinámicos scoring */
 .scoring-productos-grupo { display: none; }
 .scoring-productos-grupo.active { display: block; }
 .scoring-form { display: none; }
@@ -172,6 +198,13 @@ header { background: var(--surface); border-bottom: 3px solid var(--accent); pad
 /* ══ EMPTY ══ */
 .empty-msg { padding: 48px 16px; text-align: center; color: var(--muted); font-family: var(--font-mono); font-size: 12px; letter-spacing: 1px; line-height: 2; }
 
+/* ══ CRUD ══ */
+.crud-btns { display:flex; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
+.crud-btn { padding:6px 14px; font-size:11px; font-family:var(--font-mono); font-weight:700; cursor:pointer; border:1px solid var(--border); background:var(--surface2); letter-spacing:1px; transition:all .15s; }
+.crud-btn.edit:hover { border-color:var(--accent); color:var(--accent); }
+.crud-btn.del:hover  { border-color:var(--accent2); color:var(--accent2); }
+.badge-editado { font-size:9px; font-family:var(--font-mono); background:rgba(200,134,10,.15); color:var(--amber); padding:2px 6px; margin-left:6px; vertical-align:middle; }
+
 /* ══ MODAL ══ */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.88); z-index: 200; display: flex; align-items: flex-start; justify-content: center; padding: 16px; overflow-y: auto; }
 .modal-registro { background: var(--surface); border: 1px solid var(--border); border-top: 3px solid var(--accent); width: 100%; max-width: 680px; margin: auto; }
@@ -213,18 +246,8 @@ header { background: var(--surface); border-bottom: 3px solid var(--accent); pad
   .estado-check-grid { grid-template-columns: 1fr; gap: 6px; }
   .turno-grid    { grid-template-columns: 1fr; gap: 6px; }
   .categoria-grid { grid-template-columns: 1fr; }
+  .tipo-producto-grid { grid-template-columns: 1fr; }
+  .marca-grid    { grid-template-columns: 1fr; }
   .transport-row { flex-direction: column; align-items: flex-start; gap: 8px; }
-/* CRUD */
-.crud-btns { display:flex; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
-.crud-btn { padding:6px 14px; font-size:11px; font-family:var(--font-mono); font-weight:700; cursor:pointer; border:1px solid var(--border); background:var(--surface2); letter-spacing:1px; transition:all .15s; }
-.crud-btn.edit:hover { border-color:var(--accent); color:var(--accent); }
-.crud-btn.del:hover  { border-color:var(--accent2); color:var(--accent2); }
-.badge-editado { font-size:9px; font-family:var(--font-mono); background:rgba(200,134,10,.15); color:var(--amber); padding:2px 6px; margin-left:6px; vertical-align:middle; }
-
-/* Buscador producto scoring */
-.producto-search-wrap { position:relative; }
-.producto-search { width:100%; }
-.producto-dropdown { position:absolute; top:100%; left:0; right:0; background:var(--surface2); border:1px solid var(--accent); z-index:50; max-height:180px; overflow-y:auto; display:none; }
-.producto-option { padding:10px 14px; font-size:14px; cursor:pointer; color:var(--text); transition:background .15s; }
-.producto-option:hover { background:rgba(55,138,221,.15); color:var(--accent); }
+  .hora-levado-part { width: 60px !important; font-size: 18px; }
 }
