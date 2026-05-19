@@ -165,8 +165,8 @@
           <div class="field full">
             <label>Tipo de producto</label>
             <div class="tipo-producto-grid">
-              <div class="tipo-producto-btn" data-tipo="bolleria">🍞 Bollería</div>
-              <div class="tipo-producto-btn" data-tipo="molde">🍫 Pan de Molde</div>
+              <div class="tipo-producto-btn" data-tipo="bolleria">Bollería</div>
+              <div class="tipo-producto-btn" data-tipo="molde">Pan de Molde</div>
             </div>
           </div>
 
@@ -233,7 +233,6 @@
               <option value="">Seleccionar producto...</option>
               <optgroup label="Bollería"><option>Hamburguesa</option><option>Max</option><option>Pancho</option><option>Super</option></optgroup>
               <optgroup label="Pan de Molde"><option>Multicereal</option><option>Integral</option><option>Salvado F</option><option>Salvado C</option><option>Lacteado F</option><option>Lacteado C</option></optgroup>
-              <optgroup label="Otros"><option>Otro</option></optgroup>
             </select>
           </div>
           <div class="field full" id="horn-producto-otro-wrap" style="display:none">
@@ -365,7 +364,7 @@
 
       <!-- ROLLOS -->
       <div class="card">
-        <div class="card-title">🎞️ Rollos</div>
+        <div class="card-title">Rollos</div>
 
         <div class="field">
           <label>Marca</label>
@@ -413,7 +412,7 @@
 
       <!-- BOLSAS -->
       <div class="card">
-        <div class="card-title">🛍️ Bolsas</div>
+        <div class="card-title">Bolsas</div>
 
         <div class="field">
           <label>Producto (Pan de Molde)</label>
@@ -460,7 +459,6 @@
       <div class="field mb-0">
         <label>Categoría</label>
         <div class="categoria-grid">
-          <div class="categoria-btn active" data-cat="envase">ENVASE</div>
           <div class="categoria-btn" data-cat="bolleria">BOLLERÍA</div>
           <div class="categoria-btn" data-cat="molde">PAN DE MOLDE</div>
         </div>
@@ -469,14 +467,6 @@
 
     <div class="card">
       <div class="card-title">Producto evaluado</div>
-      <div id="scoring-productos-envase" class="scoring-productos-grupo active">
-        <select id="sc-env-producto">
-          <option value="">— Seleccionar producto —</option>
-          <option>Lactal Chico</option><option>Lactal Familiar</option><option>Multicereal</option>
-          <option>Integral</option><option>Salvado Chico</option><option>Salvado Familiar</option>
-          <option>Pancho</option><option>Otro</option>
-        </select>
-      </div>
       <div id="scoring-productos-bolleria" class="scoring-productos-grupo">
         <select id="sc-bol-producto">
           <option value="">— Seleccionar producto —</option>
@@ -490,48 +480,6 @@
           <option>Salvado F</option><option>Salvado C</option>
           <option>Lacteado F</option><option>Lacteado C</option>
         </select>
-      </div>
-    </div>
-
-    <!-- FORM ENVASE -->
-    <div id="scoring-form-envase" class="scoring-form active">
-      <div class="card">
-        <div class="card-title">📦 Scoring Envase</div>
-        <div class="form-grid">
-          <div class="field"><label>Lote</label><input type="text" id="sc-env-lote" placeholder="N° de lote"></div>
-          <div class="field"><label>Vencimiento</label><input type="text" id="sc-env-vto" placeholder="Fecha"></div>
-          <div class="field"><label>Peso (g)</label><input type="text" id="sc-env-peso" placeholder="Ej: 502g"></div>
-          <div class="field"><label>Color</label><input type="text" id="sc-env-color" placeholder="Observación"></div>
-          <div class="field"><label>Base</label><input type="text" id="sc-env-base" placeholder="Observación"></div>
-          <div class="field"><label>Altura</label><input type="text" id="sc-env-altura" placeholder="Observación"></div>
-          <div class="field"><label>Desgarro</label><input type="text" id="sc-env-desgarro" placeholder="Observación"></div>
-          <div class="field"><label>Manchas</label><input type="text" id="sc-env-manchas" placeholder="Observación"></div>
-          <div class="field"><label>Harina</label><input type="text" id="sc-env-harina" placeholder="Observación"></div>
-          <div class="field"><label>Estrías</label><input type="text" id="sc-env-estrias" placeholder="Observación"></div>
-          <div class="field"><label>Estivado</label><input type="text" id="sc-env-estivado" placeholder="Observación"></div>
-          <div class="field"><label>Miga</label><input type="text" id="sc-env-miga" placeholder="Observación"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- FORM BOLLERÍA -->
-    <div id="scoring-form-bolleria" class="scoring-form">
-      <div class="card">
-        <div class="card-title">🍞 Scoring Bollería</div>
-        <div class="form-grid">
-          <div class="field"><label>Lote</label><input type="text" id="sc-bol-lote" placeholder="N° de lote"></div>
-          <div class="field"><label>Vencimiento</label><input type="text" id="sc-bol-vto" placeholder="Fecha"></div>
-          <div class="field"><label>Peso (g)</label><input type="text" id="sc-bol-peso" placeholder="Ej: 498g"></div>
-          <div class="field"><label>Color</label><input type="text" id="sc-bol-color" placeholder="Observación"></div>
-          <div class="field"><label>Base</label><input type="text" id="sc-bol-base" placeholder="Observación"></div>
-          <div class="field"><label>Altura</label><input type="text" id="sc-bol-altura" placeholder="Observación"></div>
-          <div class="field"><label>Desgarro</label><input type="text" id="sc-bol-desgarro" placeholder="Observación"></div>
-          <div class="field"><label>Manchas</label><input type="text" id="sc-bol-manchas" placeholder="Observación"></div>
-          <div class="field"><label>Harina</label><input type="text" id="sc-bol-harina" placeholder="Observación"></div>
-          <div class="field"><label>Estrías</label><input type="text" id="sc-bol-estrias" placeholder="Observación"></div>
-          <div class="field"><label>Estivado</label><input type="text" id="sc-bol-estivado" placeholder="Observación"></div>
-          <div class="field"><label>Miga</label><input type="text" id="sc-bol-miga" placeholder="Observación"></div>
-        </div>
       </div>
     </div>
 
@@ -594,7 +542,7 @@
   </header>
   <div class="vis-tabs">
     <div class="vis-tab active" data-tab="tab-vis-partes">📋 Registros</div>
-    <div class="vis-tab" data-tab="tab-vis-scoring">🏅 Scoring</div>
+    <div class="vis-tab" data-tab="tab-vis-scoring">Scoring</div>
   </div>
   <div id="tab-vis-partes" class="vis-tab-content app-content active">
     <div class="section-header"><div class="section-title" style="margin:0">REGISTROS DE CALIDAD</div></div>
