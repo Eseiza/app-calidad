@@ -108,7 +108,7 @@ select optgroup { font-family: var(--font-mono); font-size: 10px; color: var(--m
 .ok-obs-detail { margin-top: 6px; }
 
 /* ══ CATEGORÍA SCORING ══ */
-.categoria-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+.categoria-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px; }
 .categoria-btn { background: var(--surface2); border: 2px solid var(--border); color: var(--muted); padding: 12px 6px; text-align: center; cursor: pointer; font-size: 11px; font-weight: 700; font-family: var(--font-mono); letter-spacing: 1px; transition: all .2s; user-select: none; }
 .categoria-btn.active { border-color: var(--accent); background: rgba(55,138,221,.12); color: var(--accent); }
 
@@ -200,9 +200,8 @@ header { background: var(--surface); border-bottom: 3px solid var(--accent); pad
 
 /* ══ CRUD ══ */
 .crud-btns { display:flex; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }
-.crud-btn { padding:6px 14px; font-size:11px; font-family:var(--font-mono); font-weight:700; cursor:pointer; border:1px solid var(--border); background:var(--surface2); letter-spacing:1px; transition:all .15s; }
-.crud-btn.edit:hover { border-color:var(--accent); color:var(--accent); }
-.crud-btn.del:hover  { border-color:var(--accent2); color:var(--accent2); }
+.crud-btn { padding:6px 14px; font-size:11px; font-family:var(--font-mono); font-weight:700; cursor:pointer; border:1px solid #3a5068; background:var(--surface2); color:#8faec8; letter-spacing:1px; transition:all .15s; }
+.crud-btn:hover { border-color:#8faec8; color:#dce9f5; background:#2e4a66; }
 .badge-editado { font-size:9px; font-family:var(--font-mono); background:rgba(200,134,10,.15); color:var(--amber); padding:2px 6px; margin-left:6px; vertical-align:middle; }
 
 /* ══ MODAL ══ */
