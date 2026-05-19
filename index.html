@@ -151,7 +151,7 @@
       </div>
     </div>
 
-    <!-- CAMARA — producto lista + horas -->
+    <!-- ══ CAMARA — selector tipo + lista dinámica + hora levado ══ -->
     <div id="sec-camara" class="seccion">
       <div class="card">
         <div class="card-title">🌡️ Cámara de Fermento</div>
@@ -160,19 +160,53 @@
           <div class="field"><label>Temperatura real</label><input type="text" id="cam-temp" placeholder="Ej: 31.5°C"></div>
           <div class="field"><label>Set humedad</label><input type="text" id="cam-set-hum" placeholder="Ej: 80%"></div>
           <div class="field"><label>Humedad real</label><input type="text" id="cam-hum" placeholder="Ej: 79%"></div>
+
+          <!-- Tipo de producto -->
           <div class="field full">
-            <label>Producto</label>
-            <select id="cam-producto">
+            <label>Tipo de producto</label>
+            <div class="tipo-producto-grid">
+              <div class="tipo-producto-btn" data-tipo="bolleria">🍞 Bollería</div>
+              <div class="tipo-producto-btn" data-tipo="molde">🍫 Pan de Molde</div>
+            </div>
+          </div>
+
+          <!-- Lista Bollería -->
+          <div class="field full" id="cam-lista-bolleria" style="display:none">
+            <label>Producto — Bollería</label>
+            <select id="cam-producto-bolleria">
               <option value="">Seleccionar producto...</option>
-              <optgroup label="Bollería"><option>Lactal 500g</option><option>Lactal 700g</option><option>Lactal light</option><option>Pan integral</option><option>Pan de hamburguesa</option><option>Pan de hot dog</option><option>Brioche</option></optgroup>
-              <optgroup label="Pan de Molde"><option>Molde blanco 500g</option><option>Molde blanco 700g</option><option>Molde integral 500g</option><option>Molde light 500g</option></optgroup>
-              <optgroup label="Otros"><option>Otro</option></optgroup>
+              <option>Hamburguesa</option>
+              <option>Max</option>
+              <option>Pancho</option>
+              <option>Super</option>
             </select>
           </div>
-          <div class="field full" id="cam-producto-otro-wrap" style="display:none">
-            <label>Especificar producto</label>
-            <input type="text" id="cam-producto-otro" placeholder="Nombre del producto">
+
+          <!-- Lista Pan de Molde -->
+          <div class="field full" id="cam-lista-molde" style="display:none">
+            <label>Producto — Pan de Molde</label>
+            <select id="cam-producto-molde">
+              <option value="">Seleccionar producto...</option>
+              <option>Multicereal</option>
+              <option>Integral</option>
+              <option>Salvado F</option>
+              <option>Salvado C</option>
+              <option>Lacteado F</option>
+              <option>Lacteado C</option>
+            </select>
           </div>
+
+          <!-- Hora levado (panel) -->
+          <div class="field full">
+            <label>Hora — Panel de levado</label>
+            <div class="hora-levado-wrap">
+              <input type="text" id="cam-hora-levado-hh" class="hora-levado-part" placeholder="01" maxlength="2" inputmode="numeric">
+              <span class="hora-levado-sep">:</span>
+              <input type="text" id="cam-hora-levado-mm" class="hora-levado-part" placeholder="15" maxlength="2" inputmode="numeric">
+              <span class="hora-levado-label">hs</span>
+            </div>
+          </div>
+
           <div class="field"><label>Hora entrada a cámara</label><input type="time" id="cam-hora-entrada"></div>
           <div class="field"><label>Hora salida de cámara</label><input type="time" id="cam-hora-salida"></div>
         </div>
@@ -184,7 +218,7 @@
       </div>
     </div>
 
-    <!-- HORNO — producto lista, tiempo minutos, transportes checklist -->
+    <!-- ══ HORNO — 4 transportes con OK / observación ══ -->
     <div id="sec-horno" class="seccion">
       <div class="card">
         <div class="card-title">🔥 Horno</div>
@@ -197,8 +231,8 @@
             <label>Producto</label>
             <select id="horn-producto">
               <option value="">Seleccionar producto...</option>
-              <optgroup label="Bollería"><option>Lactal 500g</option><option>Lactal 700g</option><option>Lactal light</option><option>Pan integral</option><option>Pan de hamburguesa</option><option>Pan de hot dog</option><option>Brioche</option></optgroup>
-              <optgroup label="Pan de Molde"><option>Molde blanco 500g</option><option>Molde blanco 700g</option><option>Molde integral 500g</option><option>Molde light 500g</option></optgroup>
+              <optgroup label="Bollería"><option>Hamburguesa</option><option>Max</option><option>Pancho</option><option>Super</option></optgroup>
+              <optgroup label="Pan de Molde"><option>Multicereal</option><option>Integral</option><option>Salvado F</option><option>Salvado C</option><option>Lacteado F</option><option>Lacteado C</option></optgroup>
               <optgroup label="Otros"><option>Otro</option></optgroup>
             </select>
           </div>
@@ -212,35 +246,63 @@
           </div>
         </div>
 
-        <!-- Transportes: OK / NO OK -->
+        <!-- 4 Transportes: OK o Observación -->
         <div class="field mb-0">
           <label style="margin-bottom:10px">Estado de transportes</label>
           <div class="transport-grid" id="transport-grid">
-            <div class="transport-row">
-              <span class="transport-label">Transporte 1</span>
-              <div class="transport-btns">
-                <div class="transport-btn ok" data-t="t1" data-v="OK">OK</div>
-                <div class="transport-btn nok" data-t="t1" data-v="NO OK">NO OK</div>
+
+            <div class="transport-row-ext" data-t="t1">
+              <div class="transport-row">
+                <span class="transport-label">Transporte 1</span>
+                <div class="transport-btns">
+                  <div class="transport-btn ok" data-t="t1" data-v="OK">OK</div>
+                  <div class="transport-btn nok" data-t="t1" data-v="OBS">Observación</div>
+                </div>
+              </div>
+              <div class="transport-obs-wrap" id="transport-obs-wrap-t1" style="display:none">
+                <textarea id="transport-obs-t1" class="transport-obs-input" placeholder="Detalle la observación..."></textarea>
               </div>
             </div>
-            <div class="transport-row">
-              <span class="transport-label">Transporte 2</span>
-              <div class="transport-btns">
-                <div class="transport-btn ok" data-t="t2" data-v="OK">OK</div>
-                <div class="transport-btn nok" data-t="t2" data-v="NO OK">NO OK</div>
+
+            <div class="transport-row-ext" data-t="t2">
+              <div class="transport-row">
+                <span class="transport-label">Transporte 2</span>
+                <div class="transport-btns">
+                  <div class="transport-btn ok" data-t="t2" data-v="OK">OK</div>
+                  <div class="transport-btn nok" data-t="t2" data-v="OBS">Observación</div>
+                </div>
+              </div>
+              <div class="transport-obs-wrap" id="transport-obs-wrap-t2" style="display:none">
+                <textarea id="transport-obs-t2" class="transport-obs-input" placeholder="Detalle la observación..."></textarea>
               </div>
             </div>
-            <div class="transport-row">
-              <span class="transport-label">Transporte 3</span>
-              <div class="transport-btns">
-                <div class="transport-btn ok" data-t="t3" data-v="OK">OK</div>
-                <div class="transport-btn nok" data-t="t3" data-v="NO OK">NO OK</div>
+
+            <div class="transport-row-ext" data-t="t3">
+              <div class="transport-row">
+                <span class="transport-label">Transporte 3</span>
+                <div class="transport-btns">
+                  <div class="transport-btn ok" data-t="t3" data-v="OK">OK</div>
+                  <div class="transport-btn nok" data-t="t3" data-v="OBS">Observación</div>
+                </div>
+              </div>
+              <div class="transport-obs-wrap" id="transport-obs-wrap-t3" style="display:none">
+                <textarea id="transport-obs-t3" class="transport-obs-input" placeholder="Detalle la observación..."></textarea>
               </div>
             </div>
-          </div>
-          <div class="field" style="margin-top:12px;margin-bottom:0">
-            <label>Observación transportes</label>
-            <textarea id="horn-transport-obs" placeholder="Detalles adicionales..."></textarea>
+
+            <div class="transport-row-ext" data-t="t4">
+              <div class="transport-row">
+                <span class="transport-label">Transporte 4</span>
+                <div class="transport-btns">
+                  <div class="transport-btn ok" data-t="t4" data-v="OK">OK</div>
+                  <div class="transport-btn nok" data-t="t4" data-v="OBS">Observación</div>
+                </div>
+              </div>
+              <div class="transport-obs-wrap" id="transport-obs-wrap-t4" style="display:none">
+                <textarea id="transport-obs-t4" class="transport-obs-input" placeholder="Detalle la observación..."></textarea>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -263,7 +325,7 @@
       </div>
     </div>
 
-    <!-- DETECTOR — agrega hora de cambio -->
+    <!-- DETECTOR -->
     <div id="sec-detector" class="seccion">
       <div class="card">
         <div class="card-title">🔍 Detector de Metales</div>
@@ -280,7 +342,7 @@
       </div>
     </div>
 
-    <!-- ENVASE — agrega observacion -->
+    <!-- ENVASE -->
     <div id="sec-envase" class="seccion">
       <div class="card">
         <div class="card-title">📦 Envase</div>
@@ -298,18 +360,78 @@
       </div>
     </div>
 
-    <!-- BOLSAS -->
+    <!-- ══ BOLSAS Y ROLLOS — separado en Rollos + Bolsas ══ -->
     <div id="sec-bolsas" class="seccion">
+
+      <!-- ROLLOS -->
       <div class="card">
-        <div class="card-title">Bolsas y Rollos</div>
-        <div class="field"><label>Producto</label><input type="text" id="bol-producto" placeholder="Producto activo"></div>
-        <div class="form-grid">
-          <div class="field"><label>Bobinado</label><input type="text" id="bol-bobinado" placeholder="Estado"></div>
-          <div class="field"><label>Taco</label><input type="text" id="bol-taco" placeholder="Observación"></div>
-          <div class="field"><label>Corte circular</label><input type="text" id="bol-corte-circ" placeholder="Observación"></div>
-          <div class="field mb-0"><label>Corte recto</label><input type="text" id="bol-corte-rect" placeholder="Observación"></div>
+        <div class="card-title">🎞️ Rollos</div>
+
+        <div class="field">
+          <label>Marca</label>
+          <div class="marca-grid">
+            <div class="marca-btn" data-marca="The Roxy">The Roxy</div>
+            <div class="marca-btn" data-marca="Romero">Romero</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Producto (Bollería)</label>
+          <select id="rol-producto">
+            <option value="">Seleccionar producto...</option>
+            <option>Hamburguesa</option>
+            <option>Max</option>
+            <option>Pancho</option>
+            <option>Super</option>
+          </select>
+        </div>
+
+        <!-- Bobinado: OK / Observación -->
+        <div class="field">
+          <label>Bobinado</label>
+          <div class="ok-obs-row" data-campo="bobinado">
+            <div class="ok-obs-btn ok-btn" data-campo="bobinado" data-v="OK">✅ OK</div>
+            <div class="ok-obs-btn obs-btn" data-campo="bobinado" data-v="OBS">📝 Observación</div>
+          </div>
+          <div class="ok-obs-detail" id="ok-obs-detail-bobinado" style="display:none">
+            <textarea id="rol-bobinado-obs" placeholder="Observación del bobinado..."></textarea>
+          </div>
+        </div>
+
+        <!-- Taco: OK / Observación -->
+        <div class="field mb-0">
+          <label>Taco</label>
+          <div class="ok-obs-row" data-campo="taco">
+            <div class="ok-obs-btn ok-btn" data-campo="taco" data-v="OK">✅ OK</div>
+            <div class="ok-obs-btn obs-btn" data-campo="taco" data-v="OBS">📝 Observación</div>
+          </div>
+          <div class="ok-obs-detail" id="ok-obs-detail-taco" style="display:none">
+            <textarea id="rol-taco-obs" placeholder="Observación del taco..."></textarea>
+          </div>
         </div>
       </div>
+
+      <!-- BOLSAS -->
+      <div class="card">
+        <div class="card-title">🛍️ Bolsas</div>
+
+        <div class="field">
+          <label>Producto (Pan de Molde)</label>
+          <select id="bol-producto">
+            <option value="">Seleccionar producto...</option>
+            <option>Multicereal</option>
+            <option>Integral</option>
+            <option>Salvado F</option>
+            <option>Salvado C</option>
+            <option>Lacteado F</option>
+            <option>Lacteado C</option>
+          </select>
+        </div>
+
+        <div class="field"><label>Corte circular</label><input type="text" id="bol-corte-circ" placeholder="Observación"></div>
+        <div class="field mb-0"><label>Corte recto</label><input type="text" id="bol-corte-rect" placeholder="Observación"></div>
+      </div>
+
       <div class="seccion-nav-btns">
         <button class="btn btn-sm btn-outline" onclick="irSeccion('sec-envase')">← Envase</button>
         <div></div>
@@ -325,7 +447,6 @@
       <div class="fecha-badge" id="fecha-scoring">—</div>
     </div>
 
-    <!-- Turno + Categoría -->
     <div class="card">
       <div class="card-title">Configuración</div>
       <div class="field">
@@ -346,7 +467,6 @@
       </div>
     </div>
 
-    <!-- Producto selector dinámico -->
     <div class="card">
       <div class="card-title">Producto evaluado</div>
       <div id="scoring-productos-envase" class="scoring-productos-grupo active">
@@ -360,16 +480,15 @@
       <div id="scoring-productos-bolleria" class="scoring-productos-grupo">
         <select id="sc-bol-producto">
           <option value="">— Seleccionar producto —</option>
-          <option>Lactal</option><option>Lactal</option><option>Multicereal</option>
-          <option>Integral</option><option>Hamburguesa</option><option>Pancho</option>
-          <option>Super</option><option>Max</option>
+          <option>Hamburguesa</option><option>Max</option><option>Pancho</option><option>Super</option>
         </select>
       </div>
       <div id="scoring-productos-molde" class="scoring-productos-grupo">
         <select id="sc-mol-producto">
           <option value="">— Seleccionar producto —</option>
-          <option> blanco 500g</option><option> blanco 700g</option>
-          <option> integral 500g</option><option>Molde </option><option>Otro</option>
+          <option>Multicereal</option><option>Integral</option>
+          <option>Salvado F</option><option>Salvado C</option>
+          <option>Lacteado F</option><option>Lacteado C</option>
         </select>
       </div>
     </div>
@@ -454,7 +573,6 @@
         </div>
         <div class="field mb-0"><label>Usuario</label><input type="text" id="filtro-usuario" placeholder="Buscar..."></div>
       </div>
-      <!-- Tipo de historial -->
       <div class="filtros-tipo-btns">
         <button class="filtro-tipo-btn active" data-tipo="registros">Registros</button>
         <button class="filtro-tipo-btn" data-tipo="scoring">Scoring</button>
@@ -498,6 +616,20 @@
   <div id="tab-vis-scoring" class="vis-tab-content app-content">
     <div class="section-header"><div class="section-title" style="margin:0">SCORING DIARIO</div></div>
     <div id="vis-scoring-list"></div>
+  </div>
+</div>
+
+<!-- MODAL VER REGISTRO -->
+<div id="modal-overlay" class="modal-overlay" style="display:none">
+  <div class="modal modal-registro">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modal-titulo">—</div>
+        <div class="modal-sub" id="modal-meta">—</div>
+      </div>
+      <button class="btn-logout" onclick="cerrarModal()" style="font-size:16px;padding:4px 10px">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
   </div>
 </div>
 
