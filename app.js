@@ -18,6 +18,9 @@ const db  = getFirestore(app);
 const COL_REG     = "calidad-romero";
 const COL_SCORING = "calidad-scoring";
 
+// ══ APPS SCRIPT URL — reemplazá con tu URL al publicar ══
+const APPS_SCRIPT_URL = ''; // ← pegá acá tu URL
+
 /* ══ ROLES CON PERMISO CRUD ══ */
 const ROLES_CRUD = ['admin', 'calidad'];
 
@@ -499,6 +502,22 @@ function limpiarFormulario() {
   irSeccion('sec-recepcion');
 }
 
+
+/* ══ ENVIAR A GOOGLE SHEETS ══ */
+async function sendToSheets(payload) {
+  if (!APPS_SCRIPT_URL) return; // Si no hay URL configurada, omitir
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload),
+      mode: 'no-cors',
+    });
+  } catch (e) {
+    console.warn('Google Sheets sync error:', e.message);
+  }
+}
+
 /* ══ GUARDAR / ACTUALIZAR REGISTRO ══ */
 document.getElementById('btn-guardar-registro').addEventListener('click', async () => {
   if (!state.turnoActivo) { showToast('Seleccioná el turno antes de guardar', true); return; }
@@ -535,11 +554,13 @@ document.getElementById('btn-guardar-registro').addEventListener('click', async 
       showToast('✓ Registro actualizado correctamente');
     } else {
       const ahora = new Date();
-      await addDoc(collection(db, COL_REG), {
+      const docData = {
         timestamp: ahora.getTime(), fecha: ahora.toISOString(),
         turno: state.turnoActivo, usuario: state.currentUser, rol: state.role,
         secciones: seccionesConDatos, tipo: 'registro', ...datos,
-      });
+      };
+      await addDoc(collection(db, COL_REG), docData);
+      sendToSheets(docData);
       showToast('✓ Registro guardado correctamente');
     }
     limpiarFormulario();
@@ -630,11 +651,13 @@ document.getElementById('btn-guardar-scoring').addEventListener('click', async (
       showToast('✓ Scoring actualizado correctamente');
     } else {
       const ahora = new Date();
-      await addDoc(collection(db, COL_SCORING), {
+      const scoringData = {
         timestamp: ahora.getTime(), fecha: ahora.toISOString(),
         turno: state.turnoScoringActivo, usuario: state.currentUser, rol: state.role,
         tipo: 'scoring', ...datos,
-      });
+      };
+      await addDoc(collection(db, COL_SCORING), scoringData);
+      sendToSheets(scoringData);
       showToast('✓ Scoring guardado correctamente');
     }
     limpiarScoring();
