@@ -1020,7 +1020,7 @@ window.verRegistro = function(firestoreId) {
   };
 
   document.getElementById('modal-body').innerHTML = [
-    seccion('Recepción MP', [
+    seccion('📦 Recepción MP', [
       campo('Empaque', r.recepcion?.empaque_estado),
       campo('Obs. empaque', r.recepcion?.empaque_obs, 'modal-campo-valor'),
       campo('Vencimiento', r.recepcion?.vto_estado),
@@ -1033,7 +1033,7 @@ window.verRegistro = function(firestoreId) {
       campo('Obs. sector', r.formulacion?.sector_obs, 'modal-campo-valor'),
       campo('Pesos pesadas', r.formulacion?.pesos, 'modal-campo-valor'),
     ]),
-    seccion('Fabricación', [
+    seccion('🏭 Fabricación', [
       campo('Molino', r.fabricacion?.molino, 'modal-campo-valor'),
       campo('Gluten', r.fabricacion?.gluten, 'modal-campo-valor'),
       campo('Silo 1', r.fabricacion?.silo1, 'modal-campo-valor'),
@@ -1046,7 +1046,7 @@ window.verRegistro = function(firestoreId) {
       campo('Producto/bollo', r.fabricacion?.producto, 'modal-campo-valor'),
       campo('Observaciones', r.fabricacion?.obs, 'modal-campo-valor'),
     ]),
-    seccion('Cámara de Fermento', [
+    seccion('🌡️ Cámara de Fermento', [
       campo('Tipo', r.camara?.tipo_producto ? (r.camara.tipo_producto === 'bolleria' ? 'Bollería' : 'Pan de Molde') : '', 'modal-campo-valor'),
       campo('Producto', r.camara?.producto, 'modal-campo-valor'),
       campo('Hora levado', r.camara?.hora_levado, 'modal-campo-valor'),
@@ -1058,7 +1058,7 @@ window.verRegistro = function(firestoreId) {
       campo('Salida', r.camara?.hora_salida, 'modal-campo-valor'),
       campo('Observaciones', r.camara?.obs, 'modal-campo-valor'),
     ]),
-    seccion('Horno', [
+    seccion('🔥 Horno', [
       campo('Producto', r.horno?.producto, 'modal-campo-valor'),
       campo('Set zona 1', r.horno?.set_z1, 'modal-campo-valor'),
       campo('Zona 1', r.horno?.z1, 'modal-campo-valor'),
@@ -1070,30 +1070,30 @@ window.verRegistro = function(firestoreId) {
       transporteHtml(3, 't3'),
       transporteHtml(4, 't4'),
     ]),
-    seccion('Enfriador', [
+    seccion('❄️ Enfriador', [
       campo('Receta', r.enfriador?.receta, 'modal-campo-valor'),
       campo('Desmoldeador', r.enfriador?.desmoldeador, 'modal-campo-valor'),
     ]),
-    seccion('Detector de Metales', [
+    seccion('🔍 Detector de Metales', [
       campo('Receta', r.detector?.receta, 'modal-campo-valor'),
       campo('Sensibilidad', r.detector?.sensibilidad, 'modal-campo-valor'),
       campo('Hora de cambio', r.detector?.hora_cambio, 'modal-campo-valor'),
       campo('Patrones', r.detector?.patrones, 'modal-campo-valor'),
     ]),
-    seccion('Envase', [
+    seccion('📦 Envase', [
       campo('Producto', r.envase?.producto, 'modal-campo-valor'),
       campo('Paquete', r.envase?.paquete, 'modal-campo-valor'),
       campo('Lote', r.envase?.lote, 'modal-campo-valor'),
       campo('Vencimiento', r.envase?.vto, 'modal-campo-valor'),
       campo('Observaciones', r.envase?.obs, 'modal-campo-valor'),
     ]),
-    seccion('Rollos', [
+    seccion('🎞️ Rollos', [
       campo('Marca', r.rollos?.marca, 'modal-campo-valor'),
       campo('Producto', r.rollos?.producto, 'modal-campo-valor'),
       rolloOkObsHtml('Bobinado', 'bobinado'),
       rolloOkObsHtml('Taco', 'taco'),
     ]),
-    seccion('Bolsas', [
+    seccion('🛍️ Bolsas', [
       campo('Producto', r.bolsas?.producto, 'modal-campo-valor'),
       campo('Corte circular', r.bolsas?.corte_circ, 'modal-campo-valor'),
       campo('Corte recto', r.bolsas?.corte_rect, 'modal-campo-valor'),
@@ -1136,3 +1136,141 @@ window.cerrarModal = function() {
 document.getElementById('modal-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('modal-overlay')) cerrarModal();
 });
+
+/* ══ EXPORTAR EXCEL ══ */
+document.getElementById('btn-exportar')?.addEventListener('click', exportarExcel);
+
+function exportarExcel() {
+  const f = getFilters();
+  const wb = XLSX.utils.book_new();
+
+  if (state.historialTipo === 'registros') {
+    const items = filtrarItems(state.registros, f);
+    if (!items.length) { showToast('No hay registros para exportar', true); return; }
+
+    const rows = items.map(r => ({
+      'Fecha':             r.fecha ? new Date(r.fecha).toLocaleString('es-AR') : '',
+      'Turno':             r.turno || '',
+      'Usuario':           r.usuario || '',
+      // Recepción
+      'Recep. Empaque':    r.recepcion?.empaque_estado || '',
+      'Recep. Empaque Obs':r.recepcion?.empaque_obs || '',
+      'Recep. Vto':        r.recepcion?.vto_estado || '',
+      'Recep. Vto Obs':    r.recepcion?.vto_obs || '',
+      // Formulación
+      'Form. Stock':       r.formulacion?.stock_estado || '',
+      'Form. Stock Obs':   r.formulacion?.stock_obs || '',
+      'Form. Sector':      r.formulacion?.sector_estado || '',
+      'Form. Sector Obs':  r.formulacion?.sector_obs || '',
+      'Form. Pesos':       r.formulacion?.pesos || '',
+      // Fabricación
+      'Fab. Molino':       r.fabricacion?.molino || '',
+      'Fab. Gluten':       r.fabricacion?.gluten || '',
+      'Fab. Silo 1':       r.fabricacion?.silo1 || '',
+      'Fab. Silo 2':       r.fabricacion?.silo2 || '',
+      'Fab. Aceite 1':     r.fabricacion?.aceite1 || '',
+      'Fab. Aceite 2':     r.fabricacion?.aceite2 || '',
+      'Fab. Frío':         r.fabricacion?.frio || '',
+      'Fab. Balanza':      r.fabricacion?.balanza || '',
+      'Fab. T° Agua':      r.fabricacion?.tagua || '',
+      'Fab. Producto':     r.fabricacion?.producto || '',
+      'Fab. Obs':          r.fabricacion?.obs || '',
+      // Cámara
+      'Cam. Tipo':         r.camara?.tipo_producto || '',
+      'Cam. Producto':     r.camara?.producto || '',
+      'Cam. Hora Levado':  r.camara?.hora_levado || '',
+      'Cam. Set Temp':     r.camara?.set_temp || '',
+      'Cam. Temp Real':    r.camara?.temp || '',
+      'Cam. Set Hum':      r.camara?.set_hum || '',
+      'Cam. Hum Real':     r.camara?.hum || '',
+      'Cam. Entrada':      r.camara?.hora_entrada || '',
+      'Cam. Salida':       r.camara?.hora_salida || '',
+      'Cam. Obs':          r.camara?.obs || '',
+      // Horno
+      'Horno Producto':    r.horno?.producto || '',
+      'Horno Set Z1':      r.horno?.set_z1 || '',
+      'Horno Z1 Real':     r.horno?.z1 || '',
+      'Horno Set Z2':      r.horno?.set_z2 || '',
+      'Horno Z2 Real':     r.horno?.z2 || '',
+      'Horno Tiempo (min)':r.horno?.tiempo_min || '',
+      'Transp. 1':         r.horno?.t1_estado || '',
+      'Transp. 1 Obs':     r.horno?.t1_obs || '',
+      'Transp. 2':         r.horno?.t2_estado || '',
+      'Transp. 2 Obs':     r.horno?.t2_obs || '',
+      'Transp. 3':         r.horno?.t3_estado || '',
+      'Transp. 3 Obs':     r.horno?.t3_obs || '',
+      'Transp. 4':         r.horno?.t4_estado || '',
+      'Transp. 4 Obs':     r.horno?.t4_obs || '',
+      // Enfriador
+      'Enf. Receta':       r.enfriador?.receta || '',
+      'Enf. Desmoldeador': r.enfriador?.desmoldeador || '',
+      // Detector
+      'Det. Receta':       r.detector?.receta || '',
+      'Det. Sensibilidad': r.detector?.sensibilidad || '',
+      'Det. Hora Cambio':  r.detector?.hora_cambio || '',
+      'Det. Patrones':     r.detector?.patrones || '',
+      // Envase
+      'Env. Producto':     r.envase?.producto || '',
+      'Env. Paquete':      r.envase?.paquete || '',
+      'Env. Lote':         r.envase?.lote || '',
+      'Env. Vto':          r.envase?.vto || '',
+      'Env. Obs':          r.envase?.obs || '',
+      // Rollos
+      'Rol. Marca':        r.rollos?.marca || '',
+      'Rol. Producto':     r.rollos?.producto || '',
+      'Rol. Bobinado':     r.rollos?.bobinado_estado || '',
+      'Rol. Bobinado Obs': r.rollos?.bobinado_obs || '',
+      'Rol. Taco':         r.rollos?.taco_estado || '',
+      'Rol. Taco Obs':     r.rollos?.taco_obs || '',
+      // Bolsas
+      'Bol. Producto':     r.bolsas?.producto || '',
+      'Bol. Corte Circ':   r.bolsas?.corte_circ || '',
+      'Bol. Corte Recto':  r.bolsas?.corte_rect || '',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    // Ancho de columnas automático
+    ws['!cols'] = Object.keys(rows[0]).map(() => ({ wch: 20 }));
+    XLSX.utils.book_append_sheet(wb, ws, 'Registros');
+    const fecha = new Date().toISOString().slice(0,10);
+    XLSX.writeFile(wb, `romero-calidad-registros-${fecha}.xlsx`);
+    showToast('✓ Excel descargado');
+
+  } else {
+    const items = filtrarItems(state.scorings, f);
+    if (!items.length) { showToast('No hay scorings para exportar', true); return; }
+
+    const rows = items.map(s => ({
+      'Fecha':        s.fecha ? new Date(s.fecha).toLocaleString('es-AR') : '',
+      'Turno':        s.turno || '',
+      'Usuario':      s.usuario || '',
+      'Categoría':    s.categoria || '',
+      'Producto':     s.producto || '',
+      'Lote':         s.lote || '',
+      'Vencimiento':  s.vto || '',
+      'Peso (g)':     s.peso || '',
+      'Color':        s.color || '',
+      'Base':         s.base_ || '',
+      'Altura':       s.altura || '',
+      'Forma':        s.forma || '',
+      'Desgarro':     s.desgarro || '',
+      'Manchas':      s.manchas || '',
+      'Harina':       s.harina || '',
+      'Estrías':      s.estrias || '',
+      'Estivado':     s.estivado || '',
+      'Miga':         s.miga || '',
+      'Cocción':      s.coccion || '',
+      'Embollado':    s.embollado || '',
+      'Cant. Rebanadas': s.reb_cant || '',
+      'Cant. Reb. Obs':  s.reb_cant_obs || '',
+      'Grosor Rebanadas':s.reb_grosor || '',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = Object.keys(rows[0]).map(() => ({ wch: 20 }));
+    XLSX.utils.book_append_sheet(wb, ws, 'Scoring');
+    const fecha = new Date().toISOString().slice(0,10);
+    XLSX.writeFile(wb, `romero-calidad-scoring-${fecha}.xlsx`);
+    showToast('✓ Excel descargado');
+  }
+}
