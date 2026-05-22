@@ -19,7 +19,7 @@ const COL_REG     = "calidad-romero";
 const COL_SCORING = "calidad-scoring";
 
 // ══ APPS SCRIPT URL — reemplazá con tu URL al publicar ══
-const APPS_SCRIPT_URL = ''; // ← pegá acá tu URL
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzZKOVGoslHyAC4MPWv4-fq6m72CPU8a1zWCChES6gDPlvT2H1Y510kzyjP6gBaMfLS/exec'; //
 
 /* ══ ROLES CON PERMISO CRUD ══ */
 const ROLES_CRUD = ['admin', 'calidad'];
