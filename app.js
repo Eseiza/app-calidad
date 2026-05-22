@@ -19,7 +19,7 @@ const COL_REG     = "calidad-romero";
 const COL_SCORING = "calidad-scoring";
 
 // ══ APPS SCRIPT URL — reemplazá con tu URL al publicar ══
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzZKOVGoslHyAC4MPWv4-fq6m72CPU8a1zWCChES6gDPlvT2H1Y510kzyjP6gBaMfLS/exec'; //
+const APPS_SCRIPT_URL = ''; // ← pegá acá tu URL
 
 /* ══ ROLES CON PERMISO CRUD ══ */
 const ROLES_CRUD = ['admin', 'calidad'];
@@ -551,6 +551,8 @@ document.getElementById('btn-guardar-registro').addEventListener('click', async 
         fechaEdicion: ahora.toISOString(),
         ...datos,
       });
+      btn.disabled = false;
+      btn.textContent = 'GUARDAR REGISTRO ✓';
       showToast('✓ Registro actualizado correctamente');
     } else {
       const ahora = new Date();
@@ -563,6 +565,8 @@ document.getElementById('btn-guardar-registro').addEventListener('click', async 
       sendToSheets(docData);
       showToast('✓ Registro guardado correctamente');
     }
+    btn.disabled = false;
+    btn.textContent = 'GUARDAR REGISTRO ✓';
     limpiarFormulario();
   } catch (e) {
     showToast('Error al guardar: ' + e.message, true);
@@ -648,6 +652,8 @@ document.getElementById('btn-guardar-scoring').addEventListener('click', async (
         fechaEdicion: ahora.toISOString(),
         ...datos,
       });
+      btn.disabled = false;
+      btn.textContent = 'GUARDAR SCORING ✓';
       showToast('✓ Scoring actualizado correctamente');
     } else {
       const ahora = new Date();
@@ -660,6 +666,8 @@ document.getElementById('btn-guardar-scoring').addEventListener('click', async (
       sendToSheets(scoringData);
       showToast('✓ Scoring guardado correctamente');
     }
+    btn.disabled = false;
+    btn.textContent = 'GUARDAR SCORING ✓';
     limpiarScoring();
   } catch (e) {
     showToast('Error al guardar: ' + e.message, true);
