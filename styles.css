@@ -143,6 +143,8 @@ select optgroup { font-family: var(--font-mono); font-size: 10px; color: var(--m
 .btn-green { background: var(--green); }
 .btn-next { background: var(--accent); color: #fff; }
 .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); font-family: var(--font-body); font-weight: 600; letter-spacing: 1px; cursor: pointer; touch-action: manipulation; }
+.btn-excel { background: #1d6f42; color: #fff; border: none; font-family: var(--font-mono); font-weight: 700; letter-spacing: 1px; cursor: pointer; transition: background .15s; }
+.btn-excel:hover { background: #27a05f; }
 .btn-logout { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 5px 10px; font-family: var(--font-mono); font-size: 9px; letter-spacing: 1px; cursor: pointer; transition: all .2s; white-space: nowrap; }
 .btn-logout:hover { border-color: var(--accent2); color: var(--accent2); }
 
