@@ -1140,137 +1140,177 @@ document.getElementById('modal-overlay').addEventListener('click', e => {
 /* ══ EXPORTAR EXCEL ══ */
 document.getElementById('btn-exportar')?.addEventListener('click', exportarExcel);
 
+function autoCol(ws, rows) {
+  if (!rows.length) return;
+  ws['!cols'] = Object.keys(rows[0]).map(k => ({
+    wch: Math.max(k.length, ...rows.map(r => String(r[k] || '').length), 10)
+  }));
+}
+
 function exportarExcel() {
-  const f = getFilters();
+  const f  = getFilters();
   const wb = XLSX.utils.book_new();
 
   if (state.historialTipo === 'registros') {
     const items = filtrarItems(state.registros, f);
     if (!items.length) { showToast('No hay registros para exportar', true); return; }
 
-    const rows = items.map(r => ({
-      'Fecha':             r.fecha ? new Date(r.fecha).toLocaleString('es-AR') : '',
-      'Turno':             r.turno || '',
-      'Usuario':           r.usuario || '',
-      // Recepción
-      'Recep. Empaque':    r.recepcion?.empaque_estado || '',
-      'Recep. Empaque Obs':r.recepcion?.empaque_obs || '',
-      'Recep. Vto':        r.recepcion?.vto_estado || '',
-      'Recep. Vto Obs':    r.recepcion?.vto_obs || '',
-      // Formulación
-      'Form. Stock':       r.formulacion?.stock_estado || '',
-      'Form. Stock Obs':   r.formulacion?.stock_obs || '',
-      'Form. Sector':      r.formulacion?.sector_estado || '',
-      'Form. Sector Obs':  r.formulacion?.sector_obs || '',
-      'Form. Pesos':       r.formulacion?.pesos || '',
-      // Fabricación
-      'Fab. Molino':       r.fabricacion?.molino || '',
-      'Fab. Gluten':       r.fabricacion?.gluten || '',
-      'Fab. Silo 1':       r.fabricacion?.silo1 || '',
-      'Fab. Silo 2':       r.fabricacion?.silo2 || '',
-      'Fab. Aceite 1':     r.fabricacion?.aceite1 || '',
-      'Fab. Aceite 2':     r.fabricacion?.aceite2 || '',
-      'Fab. Frío':         r.fabricacion?.frio || '',
-      'Fab. Balanza':      r.fabricacion?.balanza || '',
-      'Fab. T° Agua':      r.fabricacion?.tagua || '',
-      'Fab. Producto':     r.fabricacion?.producto || '',
-      'Fab. Obs':          r.fabricacion?.obs || '',
-      // Cámara
-      'Cam. Tipo':         r.camara?.tipo_producto || '',
-      'Cam. Producto':     r.camara?.producto || '',
-      'Cam. Hora Levado':  r.camara?.hora_levado || '',
-      'Cam. Set Temp':     r.camara?.set_temp || '',
-      'Cam. Temp Real':    r.camara?.temp || '',
-      'Cam. Set Hum':      r.camara?.set_hum || '',
-      'Cam. Hum Real':     r.camara?.hum || '',
-      'Cam. Entrada':      r.camara?.hora_entrada || '',
-      'Cam. Salida':       r.camara?.hora_salida || '',
-      'Cam. Obs':          r.camara?.obs || '',
-      // Horno
-      'Horno Producto':    r.horno?.producto || '',
-      'Horno Set Z1':      r.horno?.set_z1 || '',
-      'Horno Z1 Real':     r.horno?.z1 || '',
-      'Horno Set Z2':      r.horno?.set_z2 || '',
-      'Horno Z2 Real':     r.horno?.z2 || '',
-      'Horno Tiempo (min)':r.horno?.tiempo_min || '',
-      'Transp. 1':         r.horno?.t1_estado || '',
-      'Transp. 1 Obs':     r.horno?.t1_obs || '',
-      'Transp. 2':         r.horno?.t2_estado || '',
-      'Transp. 2 Obs':     r.horno?.t2_obs || '',
-      'Transp. 3':         r.horno?.t3_estado || '',
-      'Transp. 3 Obs':     r.horno?.t3_obs || '',
-      'Transp. 4':         r.horno?.t4_estado || '',
-      'Transp. 4 Obs':     r.horno?.t4_obs || '',
-      // Enfriador
-      'Enf. Receta':       r.enfriador?.receta || '',
-      'Enf. Desmoldeador': r.enfriador?.desmoldeador || '',
-      // Detector
-      'Det. Receta':       r.detector?.receta || '',
-      'Det. Sensibilidad': r.detector?.sensibilidad || '',
-      'Det. Hora Cambio':  r.detector?.hora_cambio || '',
-      'Det. Patrones':     r.detector?.patrones || '',
-      // Envase
-      'Env. Producto':     r.envase?.producto || '',
-      'Env. Paquete':      r.envase?.paquete || '',
-      'Env. Lote':         r.envase?.lote || '',
-      'Env. Vto':          r.envase?.vto || '',
-      'Env. Obs':          r.envase?.obs || '',
-      // Rollos
-      'Rol. Marca':        r.rollos?.marca || '',
-      'Rol. Producto':     r.rollos?.producto || '',
-      'Rol. Bobinado':     r.rollos?.bobinado_estado || '',
-      'Rol. Bobinado Obs': r.rollos?.bobinado_obs || '',
-      'Rol. Taco':         r.rollos?.taco_estado || '',
-      'Rol. Taco Obs':     r.rollos?.taco_obs || '',
-      // Bolsas
-      'Bol. Producto':     r.bolsas?.producto || '',
-      'Bol. Corte Circ':   r.bolsas?.corte_circ || '',
-      'Bol. Corte Recto':  r.bolsas?.corte_rect || '',
-    }));
+    const meta = r => ({ 'Fecha': r.fecha ? new Date(r.fecha).toLocaleString('es-AR') : '', 'Turno': r.turno || '', 'Usuario': r.usuario || '' });
 
-    const ws = XLSX.utils.json_to_sheet(rows);
-    // Ancho de columnas automático
-    ws['!cols'] = Object.keys(rows[0]).map(() => ({ wch: 20 }));
-    XLSX.utils.book_append_sheet(wb, ws, 'Registros');
+    const hojas = {
+      'Recepción MP': items.map(r => ({ ...meta(r),
+        'Empaque Estado':   r.recepcion?.empaque_estado || '',
+        'Empaque Obs':      r.recepcion?.empaque_obs || '',
+        'Vto Estado':       r.recepcion?.vto_estado || '',
+        'Vto Obs':          r.recepcion?.vto_obs || '',
+      })),
+      'Formulación': items.map(r => ({ ...meta(r),
+        'Stock Estado':     r.formulacion?.stock_estado || '',
+        'Stock Obs':        r.formulacion?.stock_obs || '',
+        'Sector Estado':    r.formulacion?.sector_estado || '',
+        'Sector Obs':       r.formulacion?.sector_obs || '',
+        'Pesos':            r.formulacion?.pesos || '',
+      })),
+      'Fabricación': items.map(r => ({ ...meta(r),
+        'Molino':           r.fabricacion?.molino || '',
+        'Gluten (kg)':      r.fabricacion?.gluten || '',
+        'Silo 1':           r.fabricacion?.silo1 || '',
+        'Silo 2':           r.fabricacion?.silo2 || '',
+        'Aceite 1':         r.fabricacion?.aceite1 || '',
+        'Aceite 2':         r.fabricacion?.aceite2 || '',
+        'Equipo Frío':      r.fabricacion?.frio || '',
+        'Balanza Tolva':    r.fabricacion?.balanza || '',
+        'T° Agua':          r.fabricacion?.tagua || '',
+        'Producto/Bollo':   r.fabricacion?.producto || '',
+        'Observaciones':    r.fabricacion?.obs || '',
+      })),
+      'Cámara': items.map(r => ({ ...meta(r),
+        'Tipo Producto':    r.camara?.tipo_producto || '',
+        'Producto':         r.camara?.producto || '',
+        'Hora Levado':      r.camara?.hora_levado || '',
+        'Set Temperatura':  r.camara?.set_temp || '',
+        'Temp Real':        r.camara?.temp || '',
+        'Set Humedad':      r.camara?.set_hum || '',
+        'Humedad Real':     r.camara?.hum || '',
+        'Hora Entrada':     r.camara?.hora_entrada || '',
+        'Hora Salida':      r.camara?.hora_salida || '',
+        'Observaciones':    r.camara?.obs || '',
+      })),
+      'Horno': items.map(r => ({ ...meta(r),
+        'Producto':         r.horno?.producto || '',
+        'Set Zona 1':       r.horno?.set_z1 || '',
+        'Zona 1 Real':      r.horno?.z1 || '',
+        'Set Zona 2':       r.horno?.set_z2 || '',
+        'Zona 2 Real':      r.horno?.z2 || '',
+        'Tiempo (min)':     r.horno?.tiempo_min || '',
+        'Transp. 1':        r.horno?.t1_estado || '',
+        'Transp. 1 Obs':    r.horno?.t1_obs || '',
+        'Transp. 2':        r.horno?.t2_estado || '',
+        'Transp. 2 Obs':    r.horno?.t2_obs || '',
+        'Transp. 3':        r.horno?.t3_estado || '',
+        'Transp. 3 Obs':    r.horno?.t3_obs || '',
+        'Transp. 4':        r.horno?.t4_estado || '',
+        'Transp. 4 Obs':    r.horno?.t4_obs || '',
+      })),
+      'Enfriador': items.map(r => ({ ...meta(r),
+        'Receta':           r.enfriador?.receta || '',
+        'Desmoldeador':     r.enfriador?.desmoldeador || '',
+      })),
+      'Detector': items.map(r => ({ ...meta(r),
+        'Receta':           r.detector?.receta || '',
+        'Sensibilidad':     r.detector?.sensibilidad || '',
+        'Hora Cambio':      r.detector?.hora_cambio || '',
+        'Patrones':         r.detector?.patrones || '',
+      })),
+      'Envase': items.map(r => ({ ...meta(r),
+        'Producto':         r.envase?.producto || '',
+        'Paquete':          r.envase?.paquete || '',
+        'Lote':             r.envase?.lote || '',
+        'Vencimiento':      r.envase?.vto || '',
+        'Observaciones':    r.envase?.obs || '',
+      })),
+      'Rollos': items.map(r => ({ ...meta(r),
+        'Marca':            r.rollos?.marca || '',
+        'Producto':         r.rollos?.producto || '',
+        'Bobinado':         r.rollos?.bobinado_estado || '',
+        'Bobinado Obs':     r.rollos?.bobinado_obs || '',
+        'Taco':             r.rollos?.taco_estado || '',
+        'Taco Obs':         r.rollos?.taco_obs || '',
+      })),
+      'Bolsas': items.map(r => ({ ...meta(r),
+        'Producto':         r.bolsas?.producto || '',
+        'Corte Circular':   r.bolsas?.corte_circ || '',
+        'Corte Recto':      r.bolsas?.corte_rect || '',
+      })),
+    };
+
+    Object.entries(hojas).forEach(([nombre, rows]) => {
+      const ws = XLSX.utils.json_to_sheet(rows);
+      autoCol(ws, rows);
+      XLSX.utils.book_append_sheet(wb, ws, nombre);
+    });
+
     const fecha = new Date().toISOString().slice(0,10);
-    XLSX.writeFile(wb, `romero-calidad-registros-${fecha}.xlsx`);
+    XLSX.writeFile(wb, `romero-registros-${fecha}.xlsx`);
     showToast('✓ Excel descargado');
 
   } else {
     const items = filtrarItems(state.scorings, f);
     if (!items.length) { showToast('No hay scorings para exportar', true); return; }
 
-    const rows = items.map(s => ({
-      'Fecha':        s.fecha ? new Date(s.fecha).toLocaleString('es-AR') : '',
-      'Turno':        s.turno || '',
-      'Usuario':      s.usuario || '',
-      'Categoría':    s.categoria || '',
-      'Producto':     s.producto || '',
-      'Lote':         s.lote || '',
-      'Vencimiento':  s.vto || '',
-      'Peso (g)':     s.peso || '',
-      'Color':        s.color || '',
-      'Base':         s.base_ || '',
-      'Altura':       s.altura || '',
-      'Forma':        s.forma || '',
-      'Desgarro':     s.desgarro || '',
-      'Manchas':      s.manchas || '',
-      'Harina':       s.harina || '',
-      'Estrías':      s.estrias || '',
-      'Estivado':     s.estivado || '',
-      'Miga':         s.miga || '',
-      'Cocción':      s.coccion || '',
-      'Embollado':    s.embollado || '',
-      'Cant. Rebanadas': s.reb_cant || '',
-      'Cant. Reb. Obs':  s.reb_cant_obs || '',
-      'Grosor Rebanadas':s.reb_grosor || '',
-    }));
+    const bolleria = items.filter(s => s.categoria === 'bolleria');
+    const molde    = items.filter(s => s.categoria === 'molde');
 
-    const ws = XLSX.utils.json_to_sheet(rows);
-    ws['!cols'] = Object.keys(rows[0]).map(() => ({ wch: 20 }));
-    XLSX.utils.book_append_sheet(wb, ws, 'Scoring');
+    const metaS = s => ({ 'Fecha': s.fecha ? new Date(s.fecha).toLocaleString('es-AR') : '', 'Turno': s.turno || '', 'Usuario': s.usuario || '', 'Producto': s.producto || '' });
+
+    if (bolleria.length) {
+      const rows = bolleria.map(s => ({ ...metaS(s),
+        'Lote':         s.lote || '',
+        'Vencimiento':  s.vto || '',
+        'Peso (g)':     s.peso || '',
+        'Color':        s.color || '',
+        'Base':         s.base_ || '',
+        'Altura':       s.altura || '',
+        'Desgarro':     s.desgarro || '',
+        'Manchas':      s.manchas || '',
+        'Harina':       s.harina || '',
+        'Estrías':      s.estrias || '',
+        'Estivado':     s.estivado || '',
+        'Miga':         s.miga || '',
+      }));
+      const ws = XLSX.utils.json_to_sheet(rows);
+      autoCol(ws, rows);
+      XLSX.utils.book_append_sheet(wb, ws, 'Bollería');
+    }
+
+    if (molde.length) {
+      const rows = molde.map(s => ({ ...metaS(s),
+        'Lote':              s.lote || '',
+        'Vencimiento':       s.vto || '',
+        'Peso (g)':          s.peso || '',
+        'Color':             s.color || '',
+        'Altura':            s.altura || '',
+        'Forma':             s.forma || '',
+        'Estivado':          s.estivado || '',
+        'Miga':              s.miga || '',
+        'Cant. Rebanadas':   s.reb_cant || '',
+        'Cant. Reb. Obs':    s.reb_cant_obs || '',
+        'Grosor Rebanadas':  s.reb_grosor || '',
+        'Cocción':           s.coccion || '',
+        'Embollado':         s.embollado || '',
+        'Desgarro':          s.desgarro || '',
+      }));
+      const ws = XLSX.utils.json_to_sheet(rows);
+      autoCol(ws, rows);
+      XLSX.utils.book_append_sheet(wb, ws, 'Pan de Molde');
+    }
+
+    if (!bolleria.length && !molde.length) {
+      showToast('No hay scorings para exportar', true); return;
+    }
+
     const fecha = new Date().toISOString().slice(0,10);
-    XLSX.writeFile(wb, `romero-calidad-scoring-${fecha}.xlsx`);
+    XLSX.writeFile(wb, `romero-scoring-${fecha}.xlsx`);
     showToast('✓ Excel descargado');
   }
 }
