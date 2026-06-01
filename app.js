@@ -18,8 +18,8 @@ const db  = getFirestore(app);
 const COL_REG     = "calidad-romero";
 const COL_SCORING = "calidad-scoring";
 
-// ══ APPS SCRIPT URL ══
-const APPS_SCRIPT_URL = ''; 
+// ══ APPS SCRIPT URL — reemplazá con tu URL al publicar ══
+const APPS_SCRIPT_URL = ''; // ← pegá acá tu URL
 
 /* ══ ROLES CON PERMISO CRUD ══ */
 const ROLES_CRUD = ['admin', 'calidad'];
@@ -1309,8 +1309,8 @@ function exportarExcel() {
       const rows = bolleria.map(s => ({ ...metaS(s),
         'Lote':         s.lote || '',
         'Vencimiento':  s.vto || '',
-        'Peso (g)':   s.peso || '',
-        'Peso 2 ':   s.peso2 || '',
+        'Peso 1 (g)':   s.peso || '',
+        'Peso 2 (g)':   s.peso2 || '',
         'Envase':       s.envase || '',
         'Color':        s.color || '',
         'Base':         s.base_ || '',
@@ -1334,8 +1334,8 @@ function exportarExcel() {
       const rows = molde.map(s => ({ ...metaS(s),
         'Lote':              s.lote || '',
         'Vencimiento':       s.vto || '',
-        'Peso (g)':        s.peso || '',
-        'Peso 2 ':        s.peso2 || '',
+        'Peso 1 (g)':        s.peso || '',
+        'Peso 2 (g)':        s.peso2 || '',
         'Color':             s.color || '',
         'Altura':            s.altura || '',
         'Forma':             s.forma || '',
