@@ -18,8 +18,8 @@ const db  = getFirestore(app);
 const COL_REG     = "calidad-romero";
 const COL_SCORING = "calidad-scoring";
 
-// ══ APPS SCRIPT URL ══
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzZKOVGoslHyAC4MPWv4-fq6m72CPU8a1zWCChES6gDPlvT2H1Y510kzyjP6gBaMfLS/exec'; 
+// ══ APPS SCRIPT URL — reemplazá con tu URL al publicar ══
+const APPS_SCRIPT_URL = ''; // ← pegá acá tu URL
 
 /* ══ ROLES CON PERMISO CRUD ══ */
 const ROLES_CRUD = ['admin', 'calidad'];
@@ -580,19 +580,24 @@ function leerScoring() {
   const cat = state.categoriaActiva;
   if (cat === 'bolleria') {
     return { categoria: cat,
-      producto:  leerCampo('sc-bol-producto'),
-      lote:      leerCampo('sc-bol-lote'),
-      vto:       leerCampo('sc-bol-vto'),
-      peso:      leerCampo('sc-bol-peso'),
-      color:     leerCampo('sc-bol-color'),
-      base_:     leerCampo('sc-bol-base'),
-      altura:    leerCampo('sc-bol-altura'),
-      desgarro:  leerCampo('sc-bol-desgarro'),
-      manchas:   leerCampo('sc-bol-manchas'),
-      harina:    leerCampo('sc-bol-harina'),
-      estrias:   leerCampo('sc-bol-estrias'),
-      estivado:  leerCampo('sc-bol-estivado'),
-      miga:      leerCampo('sc-bol-miga'),
+      producto:    leerCampo('sc-bol-producto'),
+      lote:        leerCampo('sc-bol-lote'),
+      vto:         leerCampo('sc-bol-vto'),
+      peso:        leerCampo('sc-bol-peso'),
+      peso2:       leerCampo('sc-bol-peso2'),
+      envase:      leerCampo('sc-bol-envase'),
+      color:       leerCampo('sc-bol-color'),
+      base_:       leerCampo('sc-bol-base'),
+      altura:      leerCampo('sc-bol-altura'),
+      desgarro:    leerCampo('sc-bol-desgarro'),
+      manchas:     leerCampo('sc-bol-manchas'),
+      harina:      leerCampo('sc-bol-harina'),
+      estrias:     leerCampo('sc-bol-estrias'),
+      estivado:    leerCampo('sc-bol-estivado'),
+      miga:        leerCampo('sc-bol-miga'),
+      desgrana:    leerCampo('sc-bol-desgrana'),
+      descascara:  leerCampo('sc-bol-descascara'),
+      obs:         leerCampo('sc-bol-obs'),
     };
   }
   if (cat === 'molde') {
@@ -601,6 +606,7 @@ function leerScoring() {
       lote:      leerCampo('sc-mol-lote'),
       vto:       leerCampo('sc-mol-vto'),
       peso:      leerCampo('sc-mol-peso'),
+      peso2:     leerCampo('sc-mol-peso2'),
       color:     leerCampo('sc-mol-color'),
       altura:    leerCampo('sc-mol-altura'),
       forma:     leerCampo('sc-mol-forma'),
@@ -612,6 +618,7 @@ function leerScoring() {
       coccion:   leerCampo('sc-mol-coccion'),
       embollado: leerCampo('sc-mol-embollado'),
       desgarro:  leerCampo('sc-mol-desgarro'),
+      obs:       leerCampo('sc-mol-obs'),
     };
   }
   return { categoria: cat };
@@ -948,18 +955,20 @@ window.editarScoring = function(firestoreId) {
   if (s.categoria === 'bolleria') {
     const sel = document.getElementById('sc-bol-producto');
     if (sel) sel.value = s.producto || '';
-    Object.entries({ 'sc-bol-lote':s.lote, 'sc-bol-vto':s.vto, 'sc-bol-peso':s.peso, 'sc-bol-color':s.color,
+    Object.entries({ 'sc-bol-lote':s.lote, 'sc-bol-vto':s.vto, 'sc-bol-peso':s.peso, 'sc-bol-peso2':s.peso2,
+      'sc-bol-envase':s.envase, 'sc-bol-color':s.color,
       'sc-bol-base':s.base_, 'sc-bol-altura':s.altura, 'sc-bol-desgarro':s.desgarro, 'sc-bol-manchas':s.manchas,
-      'sc-bol-harina':s.harina, 'sc-bol-estrias':s.estrias, 'sc-bol-estivado':s.estivado, 'sc-bol-miga':s.miga })
+      'sc-bol-harina':s.harina, 'sc-bol-estrias':s.estrias, 'sc-bol-estivado':s.estivado, 'sc-bol-miga':s.miga,
+      'sc-bol-desgrana':s.desgrana, 'sc-bol-descascara':s.descascara, 'sc-bol-obs':s.obs })
       .forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
   }
 
   if (s.categoria === 'molde') {
     const sel = document.getElementById('sc-mol-producto');
     if (sel) sel.value = s.producto || '';
-    Object.entries({ 'sc-mol-lote':s.lote, 'sc-mol-vto':s.vto, 'sc-mol-peso':s.peso, 'sc-mol-color':s.color,
+    Object.entries({ 'sc-mol-lote':s.lote, 'sc-mol-vto':s.vto, 'sc-mol-peso':s.peso, 'sc-mol-peso2':s.peso2, 'sc-mol-color':s.color,
       'sc-mol-altura':s.altura, 'sc-mol-forma':s.forma, 'sc-mol-estivado':s.estivado, 'sc-mol-miga':s.miga,
-      'sc-mol-reb-grosor':s.reb_grosor, 'sc-mol-reb-cant-obs':s.reb_cant_obs, 'sc-mol-coccion':s.coccion, 'sc-mol-embollado':s.embollado, 'sc-mol-desgarro':s.desgarro })
+      'sc-mol-reb-grosor':s.reb_grosor, 'sc-mol-reb-cant-obs':s.reb_cant_obs, 'sc-mol-coccion':s.coccion, 'sc-mol-embollado':s.embollado, 'sc-mol-desgarro':s.desgarro, 'sc-mol-obs':s.obs })
       .forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
   }
 
@@ -1051,7 +1060,7 @@ window.verRegistro = function(firestoreId) {
   };
 
   document.getElementById('modal-body').innerHTML = [
-    seccion('Recepción MP', [
+    seccion('📦 Recepción MP', [
       campo('Empaque', r.recepcion?.empaque_estado),
       campo('Obs. empaque', r.recepcion?.empaque_obs, 'modal-campo-valor'),
       campo('Vencimiento', r.recepcion?.vto_estado),
@@ -1064,7 +1073,7 @@ window.verRegistro = function(firestoreId) {
       campo('Obs. sector', r.formulacion?.sector_obs, 'modal-campo-valor'),
       campo('Pesos pesadas', r.formulacion?.pesos, 'modal-campo-valor'),
     ]),
-    seccion('Fabricación', [
+    seccion('🏭 Fabricación', [
       campo('Molino', r.fabricacion?.molino, 'modal-campo-valor'),
       campo('Gluten', r.fabricacion?.gluten, 'modal-campo-valor'),
       campo('Silo 1', r.fabricacion?.silo1, 'modal-campo-valor'),
@@ -1077,7 +1086,7 @@ window.verRegistro = function(firestoreId) {
       campo('Producto/bollo', r.fabricacion?.producto, 'modal-campo-valor'),
       campo('Observaciones', r.fabricacion?.obs, 'modal-campo-valor'),
     ]),
-    seccion('Cámara de Fermento', [
+    seccion('🌡️ Cámara de Fermento', [
       campo('Tipo', r.camara?.tipo_producto ? (r.camara.tipo_producto === 'bolleria' ? 'Bollería' : 'Pan de Molde') : '', 'modal-campo-valor'),
       campo('Producto', r.camara?.producto, 'modal-campo-valor'),
       campo('Hora levado', r.camara?.hora_levado, 'modal-campo-valor'),
@@ -1089,7 +1098,7 @@ window.verRegistro = function(firestoreId) {
       campo('Salida', r.camara?.hora_salida, 'modal-campo-valor'),
       campo('Observaciones', r.camara?.obs, 'modal-campo-valor'),
     ]),
-    seccion('Horno', [
+    seccion('🔥 Horno', [
       campo('Producto', r.horno?.producto, 'modal-campo-valor'),
       campo('Set zona 1', r.horno?.set_z1, 'modal-campo-valor'),
       campo('Zona 1', r.horno?.z1, 'modal-campo-valor'),
@@ -1101,30 +1110,30 @@ window.verRegistro = function(firestoreId) {
       transporteHtml(3, 't3'),
       transporteHtml(4, 't4'),
     ]),
-    seccion('Enfriador', [
+    seccion('❄️ Enfriador', [
       campo('Receta', r.enfriador?.receta, 'modal-campo-valor'),
       campo('Desmoldeador', r.enfriador?.desmoldeador, 'modal-campo-valor'),
     ]),
-    seccion('Detector de Metales', [
+    seccion('🔍 Detector de Metales', [
       campo('Receta', r.detector?.receta, 'modal-campo-valor'),
       campo('Sensibilidad', r.detector?.sensibilidad, 'modal-campo-valor'),
       campo('Hora de cambio', r.detector?.hora_cambio, 'modal-campo-valor'),
       campo('Patrones', r.detector?.patrones, 'modal-campo-valor'),
     ]),
-    seccion('Envase', [
+    seccion('📦 Envase', [
       campo('Producto', r.envase?.producto, 'modal-campo-valor'),
       campo('Paquete', r.envase?.paquete, 'modal-campo-valor'),
       campo('Lote', r.envase?.lote, 'modal-campo-valor'),
       campo('Vencimiento', r.envase?.vto, 'modal-campo-valor'),
       campo('Observaciones', r.envase?.obs, 'modal-campo-valor'),
     ]),
-    seccion('Rollos', [
+    seccion('🎞️ Rollos', [
       campo('Marca', r.rollos?.marca, 'modal-campo-valor'),
       campo('Producto', r.rollos?.producto, 'modal-campo-valor'),
       rolloOkObsHtml('Bobinado', 'bobinado'),
       rolloOkObsHtml('Taco', 'taco'),
     ]),
-    seccion('Bolsas', [
+    seccion('🛍️ Bolsas', [
       campo('Producto', r.bolsas?.producto, 'modal-campo-valor'),
       campo('Corte circular', r.bolsas?.corte_circ, 'modal-campo-valor'),
       campo('Corte recto', r.bolsas?.corte_rect, 'modal-campo-valor'),
@@ -1146,11 +1155,13 @@ window.verScoring = function(firestoreId) {
   const campo = (label, val) => val
     ? `<div class="modal-campo"><div class="modal-campo-label">${label}</div><div class="modal-campo-valor">${val}</div></div>` : '';
 
-  const mapBolleria = { lote:'Lote', vto:'Vencimiento', peso:'Peso', color:'Color', base_:'Base', altura:'Altura',
-    desgarro:'Desgarro', manchas:'Manchas', harina:'Harina', estrias:'Estrías', estivado:'Estivado', miga:'Miga' };
-  const mapMolde    = { lote:'Lote', vto:'Vencimiento', peso:'Peso', color:'Color', altura:'Altura', forma:'Forma',
+  const mapBolleria = { lote:'Lote', vto:'Vencimiento', peso:'Peso 1', peso2:'Peso 2', envase:'Envase',
+    color:'Color', base_:'Base', altura:'Altura', desgarro:'Desgarro', manchas:'Manchas',
+    harina:'Harina', estrias:'Estrías', estivado:'Estivado', miga:'Miga',
+    desgrana:'Desgrana', descascara:'Descascara', obs:'Obs. producto' };
+  const mapMolde    = { lote:'Lote', vto:'Vencimiento', peso:'Peso 1', peso2:'Peso 2', color:'Color', altura:'Altura', forma:'Forma',
     estivado:'Estivado', miga:'Miga', reb_cant:'Cant. rebanadas', reb_cant_obs:'Obs. cantidad', reb_grosor:'Grosor rebanadas',
-    coccion:'Cocción', embollado:'Embollado', desgarro:'Desgarro' };
+    coccion:'Cocción', embollado:'Embollado', desgarro:'Desgarro', obs:'Obs. producto' };
 
   const map = s.categoria === 'molde' ? mapMolde : mapBolleria;
   const campos = Object.entries(map).map(([k, l]) => campo(l, s[k])).join('');
@@ -1298,7 +1309,9 @@ function exportarExcel() {
       const rows = bolleria.map(s => ({ ...metaS(s),
         'Lote':         s.lote || '',
         'Vencimiento':  s.vto || '',
-        'Peso (g)':     s.peso || '',
+        'Peso (g)':   s.peso || '',
+        'Peso 2 ':   s.peso2 || '',
+        'Envase':       s.envase || '',
         'Color':        s.color || '',
         'Base':         s.base_ || '',
         'Altura':       s.altura || '',
@@ -1308,6 +1321,9 @@ function exportarExcel() {
         'Estrías':      s.estrias || '',
         'Estivado':     s.estivado || '',
         'Miga':         s.miga || '',
+        'Desgrana':     s.desgrana || '',
+        'Descascara':   s.descascara || '',
+        'Obs. producto':s.obs || '',
       }));
       const ws = XLSX.utils.json_to_sheet(rows);
       autoCol(ws, rows);
@@ -1318,7 +1334,8 @@ function exportarExcel() {
       const rows = molde.map(s => ({ ...metaS(s),
         'Lote':              s.lote || '',
         'Vencimiento':       s.vto || '',
-        'Peso (g)':          s.peso || '',
+        'Peso (g)':        s.peso || '',
+        'Peso 2 ':        s.peso2 || '',
         'Color':             s.color || '',
         'Altura':            s.altura || '',
         'Forma':             s.forma || '',
@@ -1330,6 +1347,7 @@ function exportarExcel() {
         'Cocción':           s.coccion || '',
         'Embollado':         s.embollado || '',
         'Desgarro':          s.desgarro || '',
+        'Obs. producto':     s.obs || '',
       }));
       const ws = XLSX.utils.json_to_sheet(rows);
       autoCol(ws, rows);
