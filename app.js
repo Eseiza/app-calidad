@@ -17,13 +17,12 @@ const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const COL_REG     = "calidad-romero";
 const COL_SCORING = "calidad-scoring";
-const COL_HISTORIAL = "calidad-historial";
 
 // ══ APPS SCRIPT URL — reemplazá con tu URL al publicar ══
 const APPS_SCRIPT_URL = ''; // ← pegá acá tu URL
 
 /* ══ ROLES CON PERMISO CRUD ══ */
-const ROLES_CRUD = ['admin', 'calidad','pasante'];
+const ROLES_CRUD = ['admin', 'calidad'];
 
 /* ══ USUARIOS ══ */
 const USERS = {
@@ -46,6 +45,7 @@ const state = {
   turnoActivo: null,
   turnoScoringActivo: null,
   categoriaActiva: 'bolleria',
+  historialTipo: 'registros',
   // transportes: estado por transporte (OK o OBS)
   transportes: { t1: null, t2: null, t3: null, t4: null },
   // camara: tipo de producto seleccionado
@@ -182,6 +182,7 @@ window.doLogout = function() {
   Object.assign(state, {
     role:null, currentUser:'', registros:[], scorings:[],
     turnoActivo:null, turnoScoringActivo:null,
+    historialTipo:'registros',
     editandoId:null, editandoColeccion:null,
     camaraTipo: null, rollosMarca: null,
     transportes: { t1:null, t2:null, t3:null, t4:null },
@@ -1156,11 +1157,11 @@ window.verScoring = function(firestoreId) {
   const campo = (label, val) => val
     ? `<div class="modal-campo"><div class="modal-campo-label">${label}</div><div class="modal-campo-valor">${val}</div></div>` : '';
 
-  const mapBolleria = { lote:'Lote', vto:'Vencimiento', peso:'Peso', peso2:'Peso 2', envase:'Envase',
+  const mapBolleria = { lote:'Lote', vto:'Vencimiento', peso:'Peso 1', peso2:'Peso 2', envase:'Envase',
     color:'Color', base_:'Base', altura:'Altura', desgarro:'Desgarro', manchas:'Manchas',
     harina:'Harina', estrias:'Estrías', estivado:'Estivado', miga:'Miga',
     desgrana:'Desgrana', descascara:'Descascara', obs:'Obs. producto' };
-  const mapMolde    = { lote:'Lote', vto:'Vencimiento', peso:'Peso', peso2:'Peso 2', color:'Color', altura:'Altura', forma:'Forma',
+  const mapMolde    = { lote:'Lote', vto:'Vencimiento', peso:'Peso 1', peso2:'Peso 2', color:'Color', altura:'Altura', forma:'Forma',
     estivado:'Estivado', miga:'Miga', reb_cant:'Cant. rebanadas', reb_cant_obs:'Obs. cantidad', reb_grosor:'Grosor rebanadas',
     coccion:'Cocción', embollado:'Embollado', desgarro:'Desgarro', obs:'Obs. producto' };
 
@@ -1310,8 +1311,8 @@ function exportarExcel() {
       const rows = bolleria.map(s => ({ ...metaS(s),
         'Lote':         s.lote || '',
         'Vencimiento':  s.vto || '',
-        'Peso (g)':   s.peso || '',
-        'Peso 2 ':   s.peso2 || '',
+        'Peso 1 (g)':   s.peso || '',
+        'Peso 2 (g)':   s.peso2 || '',
         'Envase':       s.envase || '',
         'Color':        s.color || '',
         'Base':         s.base_ || '',
@@ -1335,8 +1336,8 @@ function exportarExcel() {
       const rows = molde.map(s => ({ ...metaS(s),
         'Lote':              s.lote || '',
         'Vencimiento':       s.vto || '',
-        'Peso (g)':        s.peso || '',
-        'Peso 2':        s.peso2 || '',
+        'Peso 1 (g)':        s.peso || '',
+        'Peso 2 (g)':        s.peso2 || '',
         'Color':             s.color || '',
         'Altura':            s.altura || '',
         'Forma':             s.forma || '',
