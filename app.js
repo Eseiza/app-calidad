@@ -1060,7 +1060,7 @@ window.verRegistro = function(firestoreId) {
   };
 
   document.getElementById('modal-body').innerHTML = [
-    seccion('📦 Recepción MP', [
+    seccion('Recepción MP', [
       campo('Empaque', r.recepcion?.empaque_estado),
       campo('Obs. empaque', r.recepcion?.empaque_obs, 'modal-campo-valor'),
       campo('Vencimiento', r.recepcion?.vto_estado),
@@ -1073,7 +1073,7 @@ window.verRegistro = function(firestoreId) {
       campo('Obs. sector', r.formulacion?.sector_obs, 'modal-campo-valor'),
       campo('Pesos pesadas', r.formulacion?.pesos, 'modal-campo-valor'),
     ]),
-    seccion('🏭 Fabricación', [
+    seccion('Fabricación', [
       campo('Molino', r.fabricacion?.molino, 'modal-campo-valor'),
       campo('Gluten', r.fabricacion?.gluten, 'modal-campo-valor'),
       campo('Silo 1', r.fabricacion?.silo1, 'modal-campo-valor'),
@@ -1086,7 +1086,7 @@ window.verRegistro = function(firestoreId) {
       campo('Producto/bollo', r.fabricacion?.producto, 'modal-campo-valor'),
       campo('Observaciones', r.fabricacion?.obs, 'modal-campo-valor'),
     ]),
-    seccion('🌡️ Cámara de Fermento', [
+    seccion('Cámara de Fermento', [
       campo('Tipo', r.camara?.tipo_producto ? (r.camara.tipo_producto === 'bolleria' ? 'Bollería' : 'Pan de Molde') : '', 'modal-campo-valor'),
       campo('Producto', r.camara?.producto, 'modal-campo-valor'),
       campo('Hora levado', r.camara?.hora_levado, 'modal-campo-valor'),
@@ -1098,7 +1098,7 @@ window.verRegistro = function(firestoreId) {
       campo('Salida', r.camara?.hora_salida, 'modal-campo-valor'),
       campo('Observaciones', r.camara?.obs, 'modal-campo-valor'),
     ]),
-    seccion('🔥 Horno', [
+    seccion('Horno', [
       campo('Producto', r.horno?.producto, 'modal-campo-valor'),
       campo('Set zona 1', r.horno?.set_z1, 'modal-campo-valor'),
       campo('Zona 1', r.horno?.z1, 'modal-campo-valor'),
@@ -1110,30 +1110,30 @@ window.verRegistro = function(firestoreId) {
       transporteHtml(3, 't3'),
       transporteHtml(4, 't4'),
     ]),
-    seccion('❄️ Enfriador', [
+    seccion('Enfriador', [
       campo('Receta', r.enfriador?.receta, 'modal-campo-valor'),
       campo('Desmoldeador', r.enfriador?.desmoldeador, 'modal-campo-valor'),
     ]),
-    seccion('🔍 Detector de Metales', [
+    seccion('Detector de Metales', [
       campo('Receta', r.detector?.receta, 'modal-campo-valor'),
       campo('Sensibilidad', r.detector?.sensibilidad, 'modal-campo-valor'),
       campo('Hora de cambio', r.detector?.hora_cambio, 'modal-campo-valor'),
       campo('Patrones', r.detector?.patrones, 'modal-campo-valor'),
     ]),
-    seccion('📦 Envase', [
+    seccion('Envase', [
       campo('Producto', r.envase?.producto, 'modal-campo-valor'),
       campo('Paquete', r.envase?.paquete, 'modal-campo-valor'),
       campo('Lote', r.envase?.lote, 'modal-campo-valor'),
       campo('Vencimiento', r.envase?.vto, 'modal-campo-valor'),
       campo('Observaciones', r.envase?.obs, 'modal-campo-valor'),
     ]),
-    seccion('🎞️ Rollos', [
+    seccion('Rollos', [
       campo('Marca', r.rollos?.marca, 'modal-campo-valor'),
       campo('Producto', r.rollos?.producto, 'modal-campo-valor'),
       rolloOkObsHtml('Bobinado', 'bobinado'),
       rolloOkObsHtml('Taco', 'taco'),
     ]),
-    seccion('🛍️ Bolsas', [
+    seccion('Bolsas', [
       campo('Producto', r.bolsas?.producto, 'modal-campo-valor'),
       campo('Corte circular', r.bolsas?.corte_circ, 'modal-campo-valor'),
       campo('Corte recto', r.bolsas?.corte_rect, 'modal-campo-valor'),
@@ -1155,11 +1155,11 @@ window.verScoring = function(firestoreId) {
   const campo = (label, val) => val
     ? `<div class="modal-campo"><div class="modal-campo-label">${label}</div><div class="modal-campo-valor">${val}</div></div>` : '';
 
-  const mapBolleria = { lote:'Lote', vto:'Vencimiento', peso:'Peso 1', peso2:'Peso 2', envase:'Envase',
+  const mapBolleria = { lote:'Lote', vto:'Vencimiento', peso:'Peso', peso2:'Peso 2', envase:'Envase',
     color:'Color', base_:'Base', altura:'Altura', desgarro:'Desgarro', manchas:'Manchas',
     harina:'Harina', estrias:'Estrías', estivado:'Estivado', miga:'Miga',
     desgrana:'Desgrana', descascara:'Descascara', obs:'Obs. producto' };
-  const mapMolde    = { lote:'Lote', vto:'Vencimiento', peso:'Peso 1', peso2:'Peso 2', color:'Color', altura:'Altura', forma:'Forma',
+  const mapMolde    = { lote:'Lote', vto:'Vencimiento', peso:'Peso', peso2:'Peso 2', color:'Color', altura:'Altura', forma:'Forma',
     estivado:'Estivado', miga:'Miga', reb_cant:'Cant. rebanadas', reb_cant_obs:'Obs. cantidad', reb_grosor:'Grosor rebanadas',
     coccion:'Cocción', embollado:'Embollado', desgarro:'Desgarro', obs:'Obs. producto' };
 
@@ -1309,8 +1309,8 @@ function exportarExcel() {
       const rows = bolleria.map(s => ({ ...metaS(s),
         'Lote':         s.lote || '',
         'Vencimiento':  s.vto || '',
-        'Peso 1 (g)':   s.peso || '',
-        'Peso 2 (g)':   s.peso2 || '',
+        'Peso (g)':   s.peso || '',
+        'Peso 2 ':   s.peso2 || '',
         'Envase':       s.envase || '',
         'Color':        s.color || '',
         'Base':         s.base_ || '',
@@ -1334,8 +1334,8 @@ function exportarExcel() {
       const rows = molde.map(s => ({ ...metaS(s),
         'Lote':              s.lote || '',
         'Vencimiento':       s.vto || '',
-        'Peso 1 (g)':        s.peso || '',
-        'Peso 2 (g)':        s.peso2 || '',
+        'Peso (g)':        s.peso || '',
+        'Peso 2':        s.peso2 || '',
         'Color':             s.color || '',
         'Altura':            s.altura || '',
         'Forma':             s.forma || '',
