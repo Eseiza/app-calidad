@@ -166,8 +166,7 @@ function doLogin() {
     tag.className   = 'role-tag ' + state.role;
 
     if (state.role === 'pasante') {
-      const tabHist = document.querySelector('#tabs-main .vis-tab[data-tab="tab-historial"]');
-      if (tabHist) tabHist.style.display = 'none';
+      // Pasante puede ver historial pero solo sus propios registros
     }
     actualizarFechas();
     setInterval(actualizarFechas, 60000);
@@ -731,12 +730,15 @@ function renderHistorial() {
   const list = document.getElementById('historial-list');
   if (!list) return;
   const f = getFilters();
+  const esPasante = state.role === 'pasante';
   if (state.historialTipo === 'registros') {
-    const items = filtrarItems(state.registros, f);
-    list.innerHTML = items.length ? items.map(r => buildRegistroCard(r, true)).join('') : emptyMsg();
+    let items = filtrarItems(state.registros, f);
+    if (esPasante) items = items.filter(r => r.usuario === state.currentUser);
+    list.innerHTML = items.length ? items.map(r => buildRegistroCard(r, !esPasante)).join('') : emptyMsg();
   } else {
-    const items = filtrarItems(state.scorings, f);
-    list.innerHTML = items.length ? items.map(s => buildScoringCard(s, true)).join('') : emptyMsg();
+    let items = filtrarItems(state.scorings, f);
+    if (esPasante) items = items.filter(s => s.usuario === state.currentUser);
+    list.innerHTML = items.length ? items.map(s => buildScoringCard(s, !esPasante)).join('') : emptyMsg();
   }
 }
 
@@ -1311,8 +1313,8 @@ function exportarExcel() {
       const rows = bolleria.map(s => ({ ...metaS(s),
         'Lote':         s.lote || '',
         'Vencimiento':  s.vto || '',
-        'Peso 1 (g)':   s.peso || '',
-        'Peso 2 (g)':   s.peso2 || '',
+        'Peso (g)':   s.peso || '',
+        'Peso 2':   s.peso2 || '',
         'Envase':       s.envase || '',
         'Color':        s.color || '',
         'Base':         s.base_ || '',
@@ -1336,8 +1338,8 @@ function exportarExcel() {
       const rows = molde.map(s => ({ ...metaS(s),
         'Lote':              s.lote || '',
         'Vencimiento':       s.vto || '',
-        'Peso 1 (g)':        s.peso || '',
-        'Peso 2 (g)':        s.peso2 || '',
+        'Peso (g)':        s.peso || '',
+        'Peso 2':        s.peso2 || '',
         'Color':             s.color || '',
         'Altura':            s.altura || '',
         'Forma':             s.forma || '',
