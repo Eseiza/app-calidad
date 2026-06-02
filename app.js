@@ -17,12 +17,13 @@ const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const COL_REG     = "calidad-romero";
 const COL_SCORING = "calidad-scoring";
+const COL_HISTORIAL = "calidad-historial";
 
 // ══ APPS SCRIPT URL — reemplazá con tu URL al publicar ══
 const APPS_SCRIPT_URL = ''; // ← pegá acá tu URL
 
 /* ══ ROLES CON PERMISO CRUD ══ */
-const ROLES_CRUD = ['admin', 'calidad'];
+const ROLES_CRUD = ['admin', 'calidad','pasante'];
 
 /* ══ USUARIOS ══ */
 const USERS = {
