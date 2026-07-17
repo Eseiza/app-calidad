@@ -128,14 +128,6 @@ function refrescarVistas() {
 }
 
 /* ══ LOGIN ══ */
-document.querySelectorAll('.role-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    state.role = btn.dataset.role;
-  });
-});
-
 ['login-user', 'login-pass'].forEach(id => {
   document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 });
@@ -144,12 +136,14 @@ document.getElementById('login-btn').addEventListener('click', doLogin);
 function doLogin() {
   const username = document.getElementById('login-user').value.trim();
   const password = document.getElementById('login-pass').value.trim();
+  const rolSeleccionado = document.getElementById('login-role').value;
+  if (!rolSeleccionado)        { showToast('Seleccioná un rol', true); return; }
   if (!username || !password) { showToast('Ingresá usuario y contraseña', true); return; }
-  if (!state.role)            { showToast('Seleccioná un rol', true); return; }
   const user = USERS[username];
   if (!user || user.password !== password) { showToast('Usuario o contraseña incorrectos', true); return; }
-  if (user.role !== state.role) { showToast(`Este usuario es "${user.role}"`, true); return; }
+  if (user.role !== rolSeleccionado) { showToast(`Este usuario es "${user.role}"`, true); return; }
 
+  state.role = rolSeleccionado;
   state.currentUser = user.nombre;
   document.getElementById('screen-login').style.display = 'none';
 
@@ -192,7 +186,7 @@ window.doLogout = function() {
   document.getElementById('screen-login').style.display = 'flex';
   document.getElementById('login-user').value = '';
   document.getElementById('login-pass').value = '';
-  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('login-role').value = '';
 };
 
 function actualizarFechas() {
