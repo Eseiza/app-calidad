@@ -22,13 +22,14 @@
     <div class="login-sub">SISTEMA DE CALIDAD</div>
     <div class="login-tagline"><span>TI 2026</span></div>
     <div class="field">
-      <label>Seleccioná tu rol</label>
-      <div class="role-grid">
-        <div class="role-btn" data-role="calidad"><span class="r-icon">🧪</span><span class="r-name">Calidad</span></div>
-        <div class="role-btn" data-role="pasante"><span class="r-icon">📝</span><span class="r-name">Pasante</span></div>
-        <div class="role-btn" data-role="admin"><span class="r-icon">⚙️</span><span class="r-name">Admin</span></div>
-        <div class="role-btn" data-role="visualizador"><span class="r-icon">👁️</span><span class="r-name">Romero</span></div>
-      </div>
+      <label>Rol</label>
+      <select id="login-role">
+        <option value="">Seleccioná tu rol</option>
+        <option value="calidad">🧪 Calidad</option>
+        <option value="pasante">📝 Pasante</option>
+        <option value="admin">⚙️ Admin</option>
+        <option value="visualizador">👁️ Romero</option>
+      </select>
     </div>
     <div class="field"><label>Usuario</label><input type="text" id="login-user" placeholder="Tu usuario"></div>
     <div class="field"><label>Contraseña</label><input type="password" id="login-pass" placeholder="••••••"></div>
