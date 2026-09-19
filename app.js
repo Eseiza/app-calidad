@@ -44,7 +44,9 @@ const state = {
   registros: [], scorings: [],
   turnoActivo: null,
   turnoScoringActivo: null,
+  turnoScoringDiarioActivo: null,
   categoriaActiva: 'bolleria',
+  categoriaActivaScd: 'bolleria',
   historialTipo: 'registros',
   // transportes: estado por transporte (OK o OBS)
   transportes: { t1: null, t2: null, t3: null, t4: null },
@@ -53,7 +55,7 @@ const state = {
   // rollos: marca seleccionada
   rollosMarca: null,
   // ok-obs campos (bobinado, taco)
-  okObsState: { bobinado: null, taco: null, 'sc-mol-reb-cant': null },
+  okObsState: { bobinado: null, taco: null },
   unsubReg: null, unsubSco: null,
   editandoId: null,
   editandoColeccion: null,
@@ -174,7 +176,7 @@ window.doLogout = function() {
   if (state.unsubSco) state.unsubSco();
   Object.assign(state, {
     role:null, currentUser:'', registros:[], scorings:[],
-    turnoActivo:null, turnoScoringActivo:null,
+    turnoActivo:null, turnoScoringActivo:null, turnoScoringDiarioActivo:null,
     historialTipo:'registros',
     editandoId:null, editandoColeccion:null,
     camaraTipo: null, rollosMarca: null,
@@ -193,7 +195,7 @@ function actualizarFechas() {
   const ahora = new Date();
   const txt = ahora.toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long' }) +
               ' · ' + ahora.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-  ['fecha-actual','fecha-scoring'].forEach(id => {
+  ['fecha-actual','fecha-scoring','fecha-scoring-diario'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = txt;
   });
@@ -226,9 +228,9 @@ document.querySelectorAll('#screen-vis .vis-tab').forEach(tab => {
 });
 
 /* ══ TURNO (registro) ══ */
-document.querySelectorAll('.turno-btn:not(.turno-scoring)').forEach(btn => {
+document.querySelectorAll('.turno-btn:not(.turno-scoring):not(.turno-scoring-diario)').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.turno-btn:not(.turno-scoring)').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('.turno-btn:not(.turno-scoring):not(.turno-scoring-diario)').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
     state.turnoActivo = btn.dataset.turno;
   });
@@ -243,15 +245,39 @@ document.querySelectorAll('.turno-btn.turno-scoring').forEach(btn => {
   });
 });
 
-/* ══ CATEGORÍA SCORING ══ */
-document.querySelectorAll('.categoria-btn').forEach(btn => {
+/* ══ TURNO (scoring diario) ══ */
+document.querySelectorAll('.turno-btn.turno-scoring-diario').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.categoria-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.turno-btn.turno-scoring-diario').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    state.turnoScoringDiarioActivo = btn.dataset.turno;
+  });
+});
+
+/* ══ CATEGORÍA SCORING ══ */
+document.querySelectorAll('#tab-scoring .categoria-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#tab-scoring .categoria-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     state.categoriaActiva = btn.dataset.cat;
     ['bolleria','molde'].forEach(cat => {
       const gEl = document.getElementById(`scoring-productos-${cat}`);
       const fEl = document.getElementById(`scoring-form-${cat}`);
+      if (gEl) gEl.classList.toggle('active', cat === btn.dataset.cat);
+      if (fEl) fEl.classList.toggle('active', cat === btn.dataset.cat);
+    });
+  });
+});
+
+/* ══ CATEGORÍA SCORING DIARIO ══ */
+document.querySelectorAll('#tab-scoring-diario .categoria-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#tab-scoring-diario .categoria-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.categoriaActivaScd = btn.dataset.cat;
+    ['bolleria','molde'].forEach(cat => {
+      const gEl = document.getElementById(`scoring-diario-productos-${cat}`);
+      const fEl = document.getElementById(`scoring-diario-form-${cat}`);
       if (gEl) gEl.classList.toggle('active', cat === btn.dataset.cat);
       if (fEl) fEl.classList.toggle('active', cat === btn.dataset.cat);
     });
@@ -403,6 +429,7 @@ function leerFormulario() {
     fabricacion: {
       molino:   leerRadio('fab-molino'),
       gluten:   leerCampo('fab-gluten'),
+      malta:    leerCampo('fab-malta'),
       silo1:    leerCampo('fab-silo1'),
       silo2:    leerCampo('fab-silo2'),
       aceite1:  leerCampo('fab-aceite1'),
@@ -436,10 +463,11 @@ function leerFormulario() {
       t2_estado: t2.estado, t2_obs: t2.obs,
       t3_estado: t3.estado, t3_obs: t3.obs,
       t4_estado: t4.estado, t4_obs: t4.obs,
+      obs:       leerCampo('horn-obs'),
     },
     enfriador: {
       receta:       leerCampo('enf-receta'),
-      desmoldeador: leerCampo('enf-desmoldeador'),
+      desmoldador:  leerCampo('enf-desmoldador'),
     },
     detector: {
       receta:       leerCampo('det-receta'),
@@ -474,7 +502,7 @@ function limpiarFormulario() {
   document.querySelectorAll('#tab-nuevo input[type="text"], #tab-nuevo input[type="number"], #tab-nuevo input[type="time"], #tab-nuevo textarea, #tab-nuevo select')
     .forEach(el => el.value = '');
   document.querySelectorAll('#tab-nuevo input[type="radio"]').forEach(el => el.checked = false);
-  document.querySelectorAll('.estado-check-btn.selected, .turno-btn:not(.turno-scoring).selected')
+  document.querySelectorAll('.estado-check-btn.selected, .turno-btn:not(.turno-scoring):not(.turno-scoring-diario).selected')
     .forEach(el => el.classList.remove('selected'));
   document.querySelectorAll('.transport-btn.selected').forEach(el => el.classList.remove('selected'));
   document.querySelectorAll('.tipo-producto-btn.selected').forEach(el => el.classList.remove('selected'));
@@ -607,8 +635,7 @@ function leerScoring() {
       forma:     leerCampo('sc-mol-forma'),
       estivado:  leerCampo('sc-mol-estivado'),
       miga:      leerCampo('sc-mol-miga'),
-      reb_cant:      state.okObsState['sc-mol-reb-cant'] || '',
-      reb_cant_obs:  state.okObsState['sc-mol-reb-cant'] === 'OBS' ? leerCampo('sc-mol-reb-cant-obs') : '',
+      reb_cant:      leerCampo('sc-mol-reb-cant'),
       reb_grosor:    leerCampo('sc-mol-reb-grosor'),
       coccion:   leerCampo('sc-mol-coccion'),
       embollado: leerCampo('sc-mol-embollado'),
@@ -621,9 +648,6 @@ function leerScoring() {
 
 function limpiarScoring() {
   document.querySelectorAll('#tab-scoring input[type="text"], #tab-scoring select').forEach(el => el.value = '');
-  document.querySelectorAll('#tab-scoring .ok-obs-btn.selected').forEach(el => el.classList.remove('selected'));
-  document.querySelectorAll('#tab-scoring .ok-obs-detail').forEach(el => el.style.display = 'none');
-  state.okObsState['sc-mol-reb-cant'] = null;
   document.querySelectorAll('.turno-btn.turno-scoring.selected').forEach(el => el.classList.remove('selected'));
   state.turnoScoringActivo = null;
   state.editandoId = null;
@@ -675,6 +699,93 @@ document.getElementById('btn-guardar-scoring').addEventListener('click', async (
     showToast('Error al guardar: ' + e.message, true);
     btn.disabled = false;
     btn.textContent = state.editandoId ? 'ACTUALIZAR SCORING ✓' : 'GUARDAR SCORING ✓';
+  }
+});
+
+/* ══ LEER SCORING DIARIO (sin Desgrana / Descascara) ══ */
+function leerScoringDiario() {
+  const cat = state.categoriaActivaScd;
+  if (cat === 'bolleria') {
+    return { categoria: cat,
+      producto:    leerCampo('scd-bol-producto'),
+      lote:        leerCampo('scd-bol-lote'),
+      vto:         leerCampo('scd-bol-vto'),
+      peso:        leerCampo('scd-bol-peso'),
+      peso2:       leerCampo('scd-bol-peso2'),
+      envase:      leerCampo('scd-bol-envase'),
+      color:       leerCampo('scd-bol-color'),
+      base_:       leerCampo('scd-bol-base'),
+      altura:      leerCampo('scd-bol-altura'),
+      desgarro:    leerCampo('scd-bol-desgarro'),
+      manchas:     leerCampo('scd-bol-manchas'),
+      harina:      leerCampo('scd-bol-harina'),
+      estrias:     leerCampo('scd-bol-estrias'),
+      estivado:    leerCampo('scd-bol-estivado'),
+      miga:        leerCampo('scd-bol-miga'),
+      obs:         leerCampo('scd-bol-obs'),
+    };
+  }
+  if (cat === 'molde') {
+    return { categoria: cat,
+      producto:  leerCampo('scd-mol-producto'),
+      lote:      leerCampo('scd-mol-lote'),
+      vto:       leerCampo('scd-mol-vto'),
+      peso:      leerCampo('scd-mol-peso'),
+      peso2:     leerCampo('scd-mol-peso2'),
+      color:     leerCampo('scd-mol-color'),
+      altura:    leerCampo('scd-mol-altura'),
+      forma:     leerCampo('scd-mol-forma'),
+      estivado:  leerCampo('scd-mol-estivado'),
+      miga:      leerCampo('scd-mol-miga'),
+      reb_cant:      leerCampo('scd-mol-reb-cant'),
+      reb_grosor:    leerCampo('scd-mol-reb-grosor'),
+      coccion:   leerCampo('scd-mol-coccion'),
+      embollado: leerCampo('scd-mol-embollado'),
+      desgarro:  leerCampo('scd-mol-desgarro'),
+      obs:       leerCampo('scd-mol-obs'),
+    };
+  }
+  return { categoria: cat };
+}
+
+function limpiarScoringDiario() {
+  document.querySelectorAll('#tab-scoring-diario input[type="text"], #tab-scoring-diario select').forEach(el => el.value = '');
+  document.querySelectorAll('.turno-btn.turno-scoring-diario.selected').forEach(el => el.classList.remove('selected'));
+  state.turnoScoringDiarioActivo = null;
+  const btn = document.getElementById('btn-guardar-scoring-diario');
+  if (btn) btn.textContent = 'GUARDAR SCORING ✓';
+}
+
+/* ══ GUARDAR SCORING DIARIO ══ */
+document.getElementById('btn-guardar-scoring-diario')?.addEventListener('click', async () => {
+  if (!state.turnoScoringDiarioActivo) { showToast('Seleccioná el turno', true); return; }
+  const datos = leerScoringDiario();
+  if (!datos.producto) { showToast('Seleccioná un producto', true); return; }
+  const tieneDatos = Object.entries(datos)
+    .filter(([k]) => !['categoria','producto'].includes(k))
+    .some(([, v]) => v && v.trim && v.trim() !== '');
+  if (!tieneDatos) { showToast('Completá al menos un campo del scoring', true); return; }
+
+  const btn = document.getElementById('btn-guardar-scoring-diario');
+  btn.disabled = true; btn.textContent = 'GUARDANDO...';
+
+  try {
+    const ahora = new Date();
+    const scoringData = {
+      timestamp: ahora.getTime(), fecha: ahora.toISOString(),
+      turno: state.turnoScoringDiarioActivo, usuario: state.currentUser, rol: state.role,
+      tipo: 'scoring', ...datos,
+    };
+    await addDoc(collection(db, COL_SCORING), scoringData);
+    sendToSheets(scoringData);
+    showToast('✓ Scoring guardado correctamente');
+    btn.disabled = false;
+    btn.textContent = 'GUARDAR SCORING ✓';
+    limpiarScoringDiario();
+  } catch (e) {
+    showToast('Error al guardar: ' + e.message, true);
+    btn.disabled = false;
+    btn.textContent = 'GUARDAR SCORING ✓';
   }
 });
 
@@ -809,7 +920,7 @@ window.editarRegistro = function(firestoreId) {
   document.getElementById('tab-nuevo').classList.add('active');
 
   state.turnoActivo = r.turno;
-  document.querySelectorAll('.turno-btn:not(.turno-scoring)').forEach(b => {
+  document.querySelectorAll('.turno-btn:not(.turno-scoring):not(.turno-scoring-diario)').forEach(b => {
     b.classList.toggle('selected', b.dataset.turno === r.turno);
   });
 
@@ -839,7 +950,7 @@ window.editarRegistro = function(firestoreId) {
   if (r.fabricacion?.molino) {
     document.querySelectorAll(`input[name="fab-molino"]`).forEach(el => { el.checked = el.value === r.fabricacion.molino; });
   }
-  Object.entries({ 'fab-gluten':r.fabricacion?.gluten, 'fab-silo1':r.fabricacion?.silo1, 'fab-silo2':r.fabricacion?.silo2,
+  Object.entries({ 'fab-gluten':r.fabricacion?.gluten, 'fab-malta':r.fabricacion?.malta, 'fab-silo1':r.fabricacion?.silo1, 'fab-silo2':r.fabricacion?.silo2,
     'fab-aceite1':r.fabricacion?.aceite1, 'fab-aceite2':r.fabricacion?.aceite2, 'fab-frio':r.fabricacion?.frio,
     'fab-balanza':r.fabricacion?.balanza, 'fab-tagua':r.fabricacion?.tagua, 'fab-producto':r.fabricacion?.producto, 'fab-obs':r.fabricacion?.obs
   }).forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
@@ -867,7 +978,7 @@ window.editarRegistro = function(firestoreId) {
 
   // Horno
   Object.entries({ 'horn-set-z1':r.horno?.set_z1, 'horn-z1':r.horno?.z1, 'horn-set-z2':r.horno?.set_z2,
-    'horn-z2':r.horno?.z2, 'horn-tiempo':r.horno?.tiempo_min
+    'horn-z2':r.horno?.z2, 'horn-tiempo':r.horno?.tiempo_min, 'horn-obs':r.horno?.obs
   }).forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
   const hornProd = document.getElementById('horn-producto');
   if (hornProd && r.horno?.producto) {
@@ -887,7 +998,7 @@ window.editarRegistro = function(firestoreId) {
   });
 
   // Enfriador
-  Object.entries({ 'enf-receta':r.enfriador?.receta, 'enf-desmoldeador':r.enfriador?.desmoldeador })
+  Object.entries({ 'enf-receta':r.enfriador?.receta, 'enf-desmoldador':r.enfriador?.desmoldador })
     .forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
 
   // Detector
@@ -944,7 +1055,7 @@ window.editarScoring = function(firestoreId) {
   });
 
   state.categoriaActiva = s.categoria;
-  document.querySelectorAll('.categoria-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === s.categoria));
+  document.querySelectorAll('#tab-scoring .categoria-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === s.categoria));
   ['bolleria','molde'].forEach(cat => {
     document.getElementById(`scoring-productos-${cat}`)?.classList.toggle('active', cat === s.categoria);
     document.getElementById(`scoring-form-${cat}`)?.classList.toggle('active', cat === s.categoria);
@@ -966,18 +1077,10 @@ window.editarScoring = function(firestoreId) {
     if (sel) sel.value = s.producto || '';
     Object.entries({ 'sc-mol-lote':s.lote, 'sc-mol-vto':s.vto, 'sc-mol-peso':s.peso, 'sc-mol-peso2':s.peso2, 'sc-mol-color':s.color,
       'sc-mol-altura':s.altura, 'sc-mol-forma':s.forma, 'sc-mol-estivado':s.estivado, 'sc-mol-miga':s.miga,
-      'sc-mol-reb-grosor':s.reb_grosor, 'sc-mol-reb-cant-obs':s.reb_cant_obs, 'sc-mol-coccion':s.coccion, 'sc-mol-embollado':s.embollado, 'sc-mol-desgarro':s.desgarro, 'sc-mol-obs':s.obs })
+      'sc-mol-reb-cant':s.reb_cant, 'sc-mol-reb-grosor':s.reb_grosor, 'sc-mol-coccion':s.coccion, 'sc-mol-embollado':s.embollado, 'sc-mol-desgarro':s.desgarro, 'sc-mol-obs':s.obs })
       .forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
   }
 
-  // Restaurar cantidad rebanadas ok/obs
-  if (s.categoria === 'molde') {
-    const rebCant = s.reb_cant || null;
-    state.okObsState['sc-mol-reb-cant'] = rebCant;
-    document.querySelectorAll('.ok-obs-btn[data-campo="sc-mol-reb-cant"]').forEach(b => b.classList.toggle('selected', b.dataset.v === rebCant));
-    const det = document.getElementById('ok-obs-detail-sc-mol-reb-cant');
-    if (det) det.style.display = rebCant === 'OBS' ? 'block' : 'none';
-  }
   state.editandoId = firestoreId;
   state.editandoColeccion = COL_SCORING;
   document.getElementById('btn-guardar-scoring').textContent = 'ACTUALIZAR SCORING ✓';
@@ -1074,6 +1177,7 @@ window.verRegistro = function(firestoreId) {
     seccion('Fabricación', [
       campo('Molino', r.fabricacion?.molino, 'modal-campo-valor'),
       campo('Gluten', r.fabricacion?.gluten, 'modal-campo-valor'),
+      campo('Malta', r.fabricacion?.malta, 'modal-campo-valor'),
       campo('Silo 1', r.fabricacion?.silo1, 'modal-campo-valor'),
       campo('Silo 2', r.fabricacion?.silo2, 'modal-campo-valor'),
       campo('Aceite 1', r.fabricacion?.aceite1, 'modal-campo-valor'),
@@ -1107,10 +1211,11 @@ window.verRegistro = function(firestoreId) {
       transporteHtml(2, 't2'),
       transporteHtml(3, 't3'),
       transporteHtml(4, 't4'),
+      campo('Observaciones', r.horno?.obs, 'modal-campo-valor'),
     ]),
     seccion('Enfriador', [
       campo('Receta', r.enfriador?.receta, 'modal-campo-valor'),
-      campo('Desmoldeador', r.enfriador?.desmoldeador, 'modal-campo-valor'),
+      campo('Desmoldador', r.enfriador?.desmoldador, 'modal-campo-valor'),
     ]),
     seccion('Detector de Metales', [
       campo('Receta', r.detector?.receta, 'modal-campo-valor'),
@@ -1158,7 +1263,7 @@ window.verScoring = function(firestoreId) {
     harina:'Harina', estrias:'Estrías', estivado:'Estivado', miga:'Miga',
     desgrana:'Desgrana', descascara:'Descascara', obs:'Obs. producto' };
   const mapMolde    = { lote:'Lote', vto:'Vencimiento', peso:'Peso 1', peso2:'Peso 2', color:'Color', altura:'Altura', forma:'Forma',
-    estivado:'Estivado', miga:'Miga', reb_cant:'Cant. rebanadas', reb_cant_obs:'Obs. cantidad', reb_grosor:'Grosor rebanadas',
+    estivado:'Estivado', miga:'Miga', reb_cant:'Cant. rebanadas', reb_grosor:'Grosor rebanadas',
     coccion:'Cocción', embollado:'Embollado', desgarro:'Desgarro', obs:'Obs. producto' };
 
   const map = s.categoria === 'molde' ? mapMolde : mapBolleria;
@@ -1214,6 +1319,7 @@ function exportarExcel() {
       'Fabricación': items.map(r => ({ ...meta(r),
         'Molino':           r.fabricacion?.molino || '',
         'Gluten (kg)':      r.fabricacion?.gluten || '',
+        'Malta (kg)':       r.fabricacion?.malta || '',
         'Silo 1':           r.fabricacion?.silo1 || '',
         'Silo 2':           r.fabricacion?.silo2 || '',
         'Aceite 1':         r.fabricacion?.aceite1 || '',
@@ -1251,10 +1357,11 @@ function exportarExcel() {
         'Transp. 3 Obs':    r.horno?.t3_obs || '',
         'Transp. 4':        r.horno?.t4_estado || '',
         'Transp. 4 Obs':    r.horno?.t4_obs || '',
+        'Observaciones':    r.horno?.obs || '',
       })),
       'Enfriador': items.map(r => ({ ...meta(r),
         'Receta':           r.enfriador?.receta || '',
-        'Desmoldeador':     r.enfriador?.desmoldeador || '',
+        'Desmoldador':      r.enfriador?.desmoldador || '',
       })),
       'Detector': items.map(r => ({ ...meta(r),
         'Receta':           r.detector?.receta || '',
@@ -1340,7 +1447,6 @@ function exportarExcel() {
         'Estivado':          s.estivado || '',
         'Miga':              s.miga || '',
         'Cant. Rebanadas':   s.reb_cant || '',
-        'Cant. Reb. Obs':    s.reb_cant_obs || '',
         'Grosor Rebanadas':  s.reb_grosor || '',
         'Cocción':           s.coccion || '',
         'Embollado':         s.embollado || '',
