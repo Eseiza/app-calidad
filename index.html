@@ -57,7 +57,6 @@
   <div class="vis-tabs" id="tabs-main">
     <div class="vis-tab active" data-tab="tab-nuevo">✚ Nuevo registro</div>
     <div class="vis-tab" data-tab="tab-scoring">Scoring</div>
-    <div class="vis-tab" data-tab="tab-scoring-diario">Scoring Diario</div>
     <div class="vis-tab" data-tab="tab-historial">Historial</div>
   </div>
 
@@ -447,12 +446,16 @@
   <!-- ══ TAB: SCORING ══ -->
   <div id="tab-scoring" class="vis-tab-content app-content">
     <div class="section-header">
-      <div class="section-title" style="margin:0">SCORING DIARIO</div>
+      <div class="section-title" style="margin:0">SCORING</div>
       <div class="fecha-badge" id="fecha-scoring">—</div>
     </div>
 
     <div class="card">
       <div class="card-title">Configuración</div>
+      <div class="field">
+        <label>Tipo de scoring</label>
+        <select id="sc-subtipo"><option value="normal">Scoring</option><option value="diario">Scoring Diario</option></select>
+      </div>
       <div class="field">
         <label>Turno</label>
         <div class="turno-grid">
@@ -508,8 +511,8 @@
           <div class="field"><label>Estrías</label><input type="text" id="sc-bol-estrias" placeholder="0-1"></div>
           <div class="field"><label>Estivado</label><input type="text" id="sc-bol-estivado" placeholder="0-1-2"></div>
           <div class="field"><label>Miga</label><input type="text" id="sc-bol-miga" placeholder="0-1-2"></div>
-          <div class="field"><label>Desgrana</label><input type="text" id="sc-bol-desgrana" placeholder="0-1"></div>
-          <div class="field"><label>Descascara</label><input type="text" id="sc-bol-descascara" placeholder="0-1"></div>
+          <div class="field sc-solo-normal"><label>Desgrana</label><input type="text" id="sc-bol-desgrana" placeholder="0-1"></div>
+          <div class="field sc-solo-normal"><label>Descascara</label><input type="text" id="sc-bol-descascara" placeholder="0-1"></div>
           <div class="field full"><label>Observación del producto</label><textarea id="sc-bol-obs" placeholder="..."></textarea></div>
         </div>
       </div>
@@ -543,103 +546,6 @@
     <button class="btn btn-green" id="btn-guardar-scoring" style="margin-top:4px">GUARDAR SCORING ✓</button>
   </div>
 
-  <!-- ══ TAB: SCORING DIARIO (sin Desgrana / Descascara) ══ -->
-  <div id="tab-scoring-diario" class="vis-tab-content app-content">
-    <div class="section-header">
-      <div class="section-title" style="margin:0">SCORING DIARIO</div>
-      <div class="fecha-badge" id="fecha-scoring-diario">—</div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Configuración</div>
-      <div class="field">
-        <label>Turno</label>
-        <div class="turno-grid">
-          <div class="turno-btn turno-scoring-diario" data-turno="mañana">Mañana</div>
-          <div class="turno-btn turno-scoring-diario" data-turno="tarde">Tarde</div>
-          <div class="turno-btn turno-scoring-diario" data-turno="noche">Noche</div>
-        </div>
-      </div>
-      <div class="field mb-0">
-        <label>Categoría</label>
-        <div class="categoria-grid" id="categoria-grid-scd">
-          <div class="categoria-btn active" data-cat="bolleria">BOLLERÍA</div>
-          <div class="categoria-btn" data-cat="molde">PAN DE MOLDE</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Producto evaluado</div>
-      <div id="scoring-diario-productos-bolleria" class="scoring-productos-grupo active">
-        <select id="scd-bol-producto">
-          <option value="">— Seleccionar producto —</option>
-          <option>Hamburguesa</option><option>Max</option><option>Pancho</option><option>Super</option>
-        </select>
-      </div>
-      <div id="scoring-diario-productos-molde" class="scoring-productos-grupo">
-        <select id="scd-mol-producto">
-          <option value="">— Seleccionar producto —</option>
-          <option>Multicereal</option><option>Integral</option>
-          <option>Salvado F</option><option>Salvado C</option>
-          <option>Lacteado F</option><option>Lacteado C</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- FORM BOLLERÍA (sin Desgrana / Descascara) -->
-    <div id="scoring-diario-form-bolleria" class="scoring-form active">
-      <div class="card">
-        <div class="card-title">Scoring Bollería</div>
-        <div class="form-grid">
-          <div class="field"><label>Lote</label><input type="text" id="scd-bol-lote" placeholder="..."></div>
-
-          <div class="field"><label>Vencimiento</label><input type="date" id="scd-bol-vto" placeholder="..."></div>
-          <div class="field"><label>Peso (g)</label><input type="text" id="scd-bol-peso" placeholder="Ej: 362"></div>
-          <div class="field"><label>Peso 2</label><input type="text" id="scd-bol-peso2" placeholder="0-1-2"></div>
-          <div class="field"><label>Envase</label><input type="text" id="scd-bol-envase" placeholder="0-1-2"></div>
-          <div class="field"><label>Color</label><input type="text" id="scd-bol-color" placeholder="0-1"></div>
-          <div class="field"><label>Base</label><input type="text" id="scd-bol-base" placeholder="0-1"></div>
-          <div class="field"><label>Altura</label><input type="text" id="scd-bol-altura" placeholder="0-1"></div>
-          <div class="field"><label>Desgarro</label><input type="text" id="scd-bol-desgarro" placeholder="0-1-2"></div>
-          <div class="field"><label>Manchas</label><input type="text" id="scd-bol-manchas" placeholder="0-1-2"></div>
-          <div class="field"><label>Harina</label><input type="text" id="scd-bol-harina" placeholder="0-1"></div>
-          <div class="field"><label>Estrías</label><input type="text" id="scd-bol-estrias" placeholder="0-1"></div>
-          <div class="field"><label>Estivado</label><input type="text" id="scd-bol-estivado" placeholder="0-1-2"></div>
-          <div class="field"><label>Miga</label><input type="text" id="scd-bol-miga" placeholder="0-1-2"></div>
-          <div class="field full"><label>Observación del producto</label><textarea id="scd-bol-obs" placeholder="..."></textarea></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- FORM PAN DE MOLDE -->
-    <div id="scoring-diario-form-molde" class="scoring-form">
-      <div class="card">
-        <div class="card-title">Scoring Pan de Molde</div>
-        <div class="form-grid">
-          <div class="field"><label>Lote</label><input type="text" id="scd-mol-lote" placeholder="..."></div>
-
-          <div class="field"><label>Vencimiento</label><input type="date" id="scd-mol-vto" placeholder="..."></div>
-          <div class="field"><label>Peso (g)</label><input type="text" id="scd-mol-peso" placeholder="Ej: 502"></div>
-          <div class="field"><label>Peso 2</label><input type="text" id="scd-mol-peso2" placeholder="0-1-2"></div>
-          <div class="field"><label>Color</label><input type="text" id="scd-mol-color" placeholder="0-1"></div>
-          <div class="field"><label>Altura</label><input type="text" id="scd-mol-altura" placeholder="0-1"></div>
-          <div class="field"><label>Forma</label><input type="text" id="scd-mol-forma" placeholder="0-1"></div>
-          <div class="field"><label>Estivado</label><input type="text" id="scd-mol-estivado" placeholder="0-1"></div>
-          <div class="field"><label>Miga</label><input type="text" id="scd-mol-miga" placeholder="0-1-2"></div>
-          <div class="field"><label>Rebanadas Cant.</label><input type="text" id="scd-mol-reb-cant" placeholder="0-1"></div>
-          <div class="field"><label>Grosor de rebanadas</label><input type="text" id="scd-mol-reb-grosor" placeholder="0-1"></div>
-          <div class="field"><label>Cocción</label><input type="text" id="scd-mol-coccion" placeholder="0-1"></div>
-          <div class="field"><label>Embollado</label><input type="text" id="scd-mol-embollado" placeholder="0-1"></div>
-          <div class="field"><label>Desgarro</label><input type="text" id="scd-mol-desgarro" placeholder="0-1"></div>
-          <div class="field full"><label>Observación del producto</label><textarea id="scd-mol-obs" placeholder="..."></textarea></div>
-        </div>
-      </div>
-    </div>
-
-    <button class="btn btn-green" id="btn-guardar-scoring-diario" style="margin-top:4px">GUARDAR SCORING ✓</button>
-  </div>
-
   <!-- ══ TAB: HISTORIAL ══ -->
   <div id="tab-historial" class="vis-tab-content app-content">
     <div class="section-header"><div class="section-title" style="margin:0">HISTORIAL</div></div>
@@ -657,10 +563,21 @@
         <button class="filtro-tipo-btn active" data-tipo="registros">Registros</button>
         <button class="filtro-tipo-btn" data-tipo="scoring">Scoring</button>
       </div>
+      <div class="field mb-0" id="filtro-subtipo-wrap" style="display:none;margin-top:12px">
+        <label>Tipo de scoring</label>
+        <select id="filtro-subtipo"><option value="">Todos</option><option value="normal">Scoring</option><option value="diario">Scoring Diario</option></select>
+      </div>
       <div style="display:flex;gap:8px;margin-top:12px">
         <button class="btn btn-sm btn-green" id="btn-filtrar" style="flex:1">FILTRAR</button>
         <button class="btn btn-sm btn-outline" id="btn-limpiar">LIMPIAR</button>
         <button class="btn btn-sm btn-excel" id="btn-exportar">⬇ EXCEL</button>
+      </div>
+      <div class="export-scoring-dia" id="export-scoring-dia" style="display:none">
+        <div class="card-title" style="margin-bottom:8px">Descargar Scoring diario</div>
+        <div style="display:flex;gap:8px;align-items:flex-end">
+          <div class="field mb-0" style="flex:1"><label>Fecha del scoring</label><input type="date" id="export-scoring-fecha"></div>
+          <button class="btn btn-sm btn-excel" id="btn-exportar-scoring-dia">⬇ EXCEL DEL DÍA</button>
+        </div>
       </div>
     </div>
     <div id="historial-list"></div>
@@ -696,7 +613,7 @@
     <div id="vis-historial-list"></div>
   </div>
   <div id="tab-vis-scoring" class="vis-tab-content app-content">
-    <div class="section-header"><div class="section-title" style="margin:0">SCORING DIARIO</div></div>
+    <div class="section-header"><div class="section-title" style="margin:0">SCORING</div></div>
     <div id="vis-scoring-list"></div>
   </div>
 </div>
