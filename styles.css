@@ -499,3 +499,4 @@ header {
   .transport-row { flex-direction: column; align-items: flex-start; gap: 8px; }
   .hora-levado-part { width: 60px !important; font-size: 18px; }
 }
+.export-scoring-dia { margin-top:16px; padding-top:14px; border-top:1px solid var(--border, rgba(255,255,255,.1)); }
