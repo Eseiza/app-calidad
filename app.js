@@ -245,15 +245,6 @@ document.querySelectorAll('.turno-btn.turno-scoring').forEach(btn => {
   });
 });
 
-/* ══ TURNO (scoring diario) ══ */
-document.querySelectorAll('.turno-btn.turno-scoring-diario').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.turno-btn.turno-scoring-diario').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    state.turnoScoringDiarioActivo = btn.dataset.turno;
-  });
-});
-
 /* ══ CATEGORÍA SCORING ══ */
 document.querySelectorAll('#tab-scoring .categoria-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -263,21 +254,6 @@ document.querySelectorAll('#tab-scoring .categoria-btn').forEach(btn => {
     ['bolleria','molde'].forEach(cat => {
       const gEl = document.getElementById(`scoring-productos-${cat}`);
       const fEl = document.getElementById(`scoring-form-${cat}`);
-      if (gEl) gEl.classList.toggle('active', cat === btn.dataset.cat);
-      if (fEl) fEl.classList.toggle('active', cat === btn.dataset.cat);
-    });
-  });
-});
-
-/* ══ CATEGORÍA SCORING DIARIO ══ */
-document.querySelectorAll('#tab-scoring-diario .categoria-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('#tab-scoring-diario .categoria-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    state.categoriaActivaScd = btn.dataset.cat;
-    ['bolleria','molde'].forEach(cat => {
-      const gEl = document.getElementById(`scoring-diario-productos-${cat}`);
-      const fEl = document.getElementById(`scoring-diario-form-${cat}`);
       if (gEl) gEl.classList.toggle('active', cat === btn.dataset.cat);
       if (fEl) fEl.classList.toggle('active', cat === btn.dataset.cat);
     });
@@ -601,8 +577,9 @@ document.getElementById('btn-guardar-registro').addEventListener('click', async 
 /* ══ LEER SCORING ══ */
 function leerScoring() {
   const cat = state.categoriaActiva;
+  const subtipo = leerCampo('sc-subtipo') === 'diario' ? 'diario' : 'normal';
   if (cat === 'bolleria') {
-    return { categoria: cat,
+    return { categoria: cat, subtipo,
       producto:    leerCampo('sc-bol-producto'),
       lote:        leerCampo('sc-bol-lote'),
       vto:         leerCampo('sc-bol-vto'),
@@ -618,13 +595,13 @@ function leerScoring() {
       estrias:     leerCampo('sc-bol-estrias'),
       estivado:    leerCampo('sc-bol-estivado'),
       miga:        leerCampo('sc-bol-miga'),
-      desgrana:    leerCampo('sc-bol-desgrana'),
-      descascara:  leerCampo('sc-bol-descascara'),
+      desgrana:    subtipo === 'diario' ? '' : leerCampo('sc-bol-desgrana'),
+      descascara:  subtipo === 'diario' ? '' : leerCampo('sc-bol-descascara'),
       obs:         leerCampo('sc-bol-obs'),
     };
   }
   if (cat === 'molde') {
-    return { categoria: cat,
+    return { categoria: cat, subtipo,
       producto:  leerCampo('sc-mol-producto'),
       lote:      leerCampo('sc-mol-lote'),
       vto:       leerCampo('sc-mol-vto'),
@@ -646,12 +623,24 @@ function leerScoring() {
   return { categoria: cat };
 }
 
+function aplicarSubtipoScoring() {
+  const esDiario = document.getElementById('sc-subtipo')?.value === 'diario';
+  document.querySelectorAll('#tab-scoring .sc-solo-normal').forEach(el => {
+    el.style.display = esDiario ? 'none' : '';
+    if (esDiario) el.querySelectorAll('input').forEach(i => { i.value = ''; });
+  });
+}
+document.getElementById('sc-subtipo')?.addEventListener('change', aplicarSubtipoScoring);
+
 function limpiarScoring() {
   document.querySelectorAll('#tab-scoring input[type="text"], #tab-scoring select').forEach(el => el.value = '');
   document.querySelectorAll('.turno-btn.turno-scoring.selected').forEach(el => el.classList.remove('selected'));
   state.turnoScoringActivo = null;
   state.editandoId = null;
   state.editandoColeccion = null;
+  const subSel = document.getElementById('sc-subtipo');
+  if (subSel) subSel.value = 'normal';
+  aplicarSubtipoScoring();
   const btn = document.getElementById('btn-guardar-scoring');
   if (btn) btn.textContent = 'GUARDAR SCORING ✓';
 }
@@ -662,7 +651,7 @@ document.getElementById('btn-guardar-scoring').addEventListener('click', async (
   const datos = leerScoring();
   if (!datos.producto) { showToast('Seleccioná un producto', true); return; }
   const tieneDatos = Object.entries(datos)
-    .filter(([k]) => !['categoria','producto'].includes(k))
+    .filter(([k]) => !['categoria','producto','subtipo'].includes(k))
     .some(([, v]) => v && v.trim && v.trim() !== '');
   if (!tieneDatos) { showToast('Completá al menos un campo del scoring', true); return; }
 
@@ -702,93 +691,6 @@ document.getElementById('btn-guardar-scoring').addEventListener('click', async (
   }
 });
 
-/* ══ LEER SCORING DIARIO (sin Desgrana / Descascara) ══ */
-function leerScoringDiario() {
-  const cat = state.categoriaActivaScd;
-  if (cat === 'bolleria') {
-    return { categoria: cat,
-      producto:    leerCampo('scd-bol-producto'),
-      lote:        leerCampo('scd-bol-lote'),
-      vto:         leerCampo('scd-bol-vto'),
-      peso:        leerCampo('scd-bol-peso'),
-      peso2:       leerCampo('scd-bol-peso2'),
-      envase:      leerCampo('scd-bol-envase'),
-      color:       leerCampo('scd-bol-color'),
-      base_:       leerCampo('scd-bol-base'),
-      altura:      leerCampo('scd-bol-altura'),
-      desgarro:    leerCampo('scd-bol-desgarro'),
-      manchas:     leerCampo('scd-bol-manchas'),
-      harina:      leerCampo('scd-bol-harina'),
-      estrias:     leerCampo('scd-bol-estrias'),
-      estivado:    leerCampo('scd-bol-estivado'),
-      miga:        leerCampo('scd-bol-miga'),
-      obs:         leerCampo('scd-bol-obs'),
-    };
-  }
-  if (cat === 'molde') {
-    return { categoria: cat,
-      producto:  leerCampo('scd-mol-producto'),
-      lote:      leerCampo('scd-mol-lote'),
-      vto:       leerCampo('scd-mol-vto'),
-      peso:      leerCampo('scd-mol-peso'),
-      peso2:     leerCampo('scd-mol-peso2'),
-      color:     leerCampo('scd-mol-color'),
-      altura:    leerCampo('scd-mol-altura'),
-      forma:     leerCampo('scd-mol-forma'),
-      estivado:  leerCampo('scd-mol-estivado'),
-      miga:      leerCampo('scd-mol-miga'),
-      reb_cant:      leerCampo('scd-mol-reb-cant'),
-      reb_grosor:    leerCampo('scd-mol-reb-grosor'),
-      coccion:   leerCampo('scd-mol-coccion'),
-      embollado: leerCampo('scd-mol-embollado'),
-      desgarro:  leerCampo('scd-mol-desgarro'),
-      obs:       leerCampo('scd-mol-obs'),
-    };
-  }
-  return { categoria: cat };
-}
-
-function limpiarScoringDiario() {
-  document.querySelectorAll('#tab-scoring-diario input[type="text"], #tab-scoring-diario select').forEach(el => el.value = '');
-  document.querySelectorAll('.turno-btn.turno-scoring-diario.selected').forEach(el => el.classList.remove('selected'));
-  state.turnoScoringDiarioActivo = null;
-  const btn = document.getElementById('btn-guardar-scoring-diario');
-  if (btn) btn.textContent = 'GUARDAR SCORING ✓';
-}
-
-/* ══ GUARDAR SCORING DIARIO ══ */
-document.getElementById('btn-guardar-scoring-diario')?.addEventListener('click', async () => {
-  if (!state.turnoScoringDiarioActivo) { showToast('Seleccioná el turno', true); return; }
-  const datos = leerScoringDiario();
-  if (!datos.producto) { showToast('Seleccioná un producto', true); return; }
-  const tieneDatos = Object.entries(datos)
-    .filter(([k]) => !['categoria','producto'].includes(k))
-    .some(([, v]) => v && v.trim && v.trim() !== '');
-  if (!tieneDatos) { showToast('Completá al menos un campo del scoring', true); return; }
-
-  const btn = document.getElementById('btn-guardar-scoring-diario');
-  btn.disabled = true; btn.textContent = 'GUARDANDO...';
-
-  try {
-    const ahora = new Date();
-    const scoringData = {
-      timestamp: ahora.getTime(), fecha: ahora.toISOString(),
-      turno: state.turnoScoringDiarioActivo, usuario: state.currentUser, rol: state.role,
-      tipo: 'scoring', ...datos,
-    };
-    await addDoc(collection(db, COL_SCORING), scoringData);
-    sendToSheets(scoringData);
-    showToast('✓ Scoring guardado correctamente');
-    btn.disabled = false;
-    btn.textContent = 'GUARDAR SCORING ✓';
-    limpiarScoringDiario();
-  } catch (e) {
-    showToast('Error al guardar: ' + e.message, true);
-    btn.disabled = false;
-    btn.textContent = 'GUARDAR SCORING ✓';
-  }
-});
-
 /* ══ HISTORIAL TIPO ══ */
 document.querySelectorAll('.filtro-tipo-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -801,8 +703,9 @@ document.querySelectorAll('.filtro-tipo-btn').forEach(btn => {
 
 /* ══ FILTROS ══ */
 document.getElementById('btn-filtrar')?.addEventListener('click', renderHistorial);
+document.getElementById('filtro-subtipo')?.addEventListener('change', renderHistorial);
 document.getElementById('btn-limpiar')?.addEventListener('click', () => {
-  ['filtro-desde','filtro-hasta','filtro-turno','filtro-usuario'].forEach(id => { document.getElementById(id).value = ''; });
+  ['filtro-desde','filtro-hasta','filtro-turno','filtro-usuario','filtro-subtipo'].forEach(id => { document.getElementById(id).value = ''; });
   renderHistorial();
 });
 document.getElementById('vis-btn-filtrar')?.addEventListener('click', renderHistorialVis);
@@ -831,9 +734,21 @@ function filtrarItems(arr, f) {
   return items;
 }
 
+// sub: '' = todos · 'normal' = Scoring · 'diario' = Scoring Diario
+function scoringsPorSubtipo(sub) {
+  if (sub === 'diario') return state.scorings.filter(s => s.subtipo === 'diario');
+  if (sub === 'normal') return state.scorings.filter(s => s.subtipo !== 'diario');
+  return state.scorings;
+}
+function subtipoFiltro() { return document.getElementById('filtro-subtipo')?.value || ''; }
+
 function renderHistorial() {
   const list = document.getElementById('historial-list');
   if (!list) return;
+  const bloqueDia = document.getElementById('export-scoring-dia');
+  if (bloqueDia) bloqueDia.style.display = state.historialTipo === 'scoring' ? 'block' : 'none';
+  const wrapSub = document.getElementById('filtro-subtipo-wrap');
+  if (wrapSub) wrapSub.style.display = state.historialTipo === 'scoring' ? 'block' : 'none';
   const f = getFilters();
   const esPasante = state.role === 'pasante';
   if (state.historialTipo === 'registros') {
@@ -841,7 +756,7 @@ function renderHistorial() {
     if (esPasante) items = items.filter(r => r.usuario === state.currentUser);
     list.innerHTML = items.length ? items.map(r => buildRegistroCard(r, !esPasante)).join('') : emptyMsg();
   } else {
-    let items = filtrarItems(state.scorings, f);
+    let items = filtrarItems(scoringsPorSubtipo(subtipoFiltro()), f);
     if (esPasante) items = items.filter(s => s.usuario === state.currentUser);
     list.innerHTML = items.length ? items.map(s => buildScoringCard(s, !esPasante)).join('') : emptyMsg();
   }
@@ -898,6 +813,7 @@ function buildScoringCard(s, showCrud) {
         <div style="display:flex;gap:6px;align-items:center">
           <span class="badge-turno ${s.turno}">${turnoLabel[s.turno] || s.turno}</span>
           <span class="badge-cat">${catLabel[s.categoria] || s.categoria}</span>
+          ${s.subtipo === 'diario' ? '<span class="badge-cat">DIARIO</span>' : ''}
         </div>
       </div>
       <div class="registro-meta">${formatFecha(s.fecha)} · ${s.usuario}</div>
@@ -1048,6 +964,10 @@ window.editarScoring = function(firestoreId) {
   document.querySelectorAll('#screen-main .vis-tab-content').forEach(c => c.classList.remove('active'));
   document.querySelector('#tabs-main .vis-tab[data-tab="tab-scoring"]').classList.add('active');
   document.getElementById('tab-scoring').classList.add('active');
+
+  const subSel = document.getElementById('sc-subtipo');
+  if (subSel) subSel.value = s.subtipo === 'diario' ? 'diario' : 'normal';
+  aplicarSubtipoScoring();
 
   state.turnoScoringActivo = s.turno;
   document.querySelectorAll('.turno-btn.turno-scoring').forEach(b => {
@@ -1253,7 +1173,7 @@ window.verScoring = function(firestoreId) {
 
   document.getElementById('modal-titulo').textContent = `Scoring — ${catLabel[s.categoria] || s.categoria}`;
   document.getElementById('modal-meta').textContent =
-    `${formatFecha(s.fecha)} · ${s.usuario} · Turno ${s.turno} · ${s.producto}${s.editado ? ' · (editado)' : ''}`;
+    `${formatFecha(s.fecha)} · ${s.usuario} · Turno ${s.turno} · ${s.producto}${s.subtipo === 'diario' ? ' · Diario' : ''}${s.editado ? ' · (editado)' : ''}`;
 
   const campo = (label, val) => val
     ? `<div class="modal-campo"><div class="modal-campo-label">${label}</div><div class="modal-campo-valor">${val}</div></div>` : '';
@@ -1402,68 +1322,96 @@ function exportarExcel() {
     showToast('✓ Excel descargado');
 
   } else {
-    const items = filtrarItems(state.scorings, f);
-    if (!items.length) { showToast('No hay scorings para exportar', true); return; }
-
-    const bolleria = items.filter(s => s.categoria === 'bolleria');
-    const molde    = items.filter(s => s.categoria === 'molde');
-
-    const metaS = s => ({ 'Fecha': s.fecha ? new Date(s.fecha).toLocaleString('es-AR') : '', 'Turno': s.turno || '', 'Usuario': s.usuario || '', 'Producto': s.producto || '' });
-
-    if (bolleria.length) {
-      const rows = bolleria.map(s => ({ ...metaS(s),
-        'Lote':         s.lote || '',
-        'Vencimiento':  s.vto || '',
-        'Peso (g)':   s.peso || '',
-        'Peso 2':   s.peso2 || '',
-        'Envase':       s.envase || '',
-        'Color':        s.color || '',
-        'Base':         s.base_ || '',
-        'Altura':       s.altura || '',
-        'Desgarro':     s.desgarro || '',
-        'Manchas':      s.manchas || '',
-        'Harina':       s.harina || '',
-        'Estrías':      s.estrias || '',
-        'Estivado':     s.estivado || '',
-        'Miga':         s.miga || '',
-        'Desgrana':     s.desgrana || '',
-        'Descascara':   s.descascara || '',
-        'Obs. producto':s.obs || '',
-      }));
-      const ws = XLSX.utils.json_to_sheet(rows);
-      autoCol(ws, rows);
-      XLSX.utils.book_append_sheet(wb, ws, 'Bollería');
-    }
-
-    if (molde.length) {
-      const rows = molde.map(s => ({ ...metaS(s),
-        'Lote':              s.lote || '',
-        'Vencimiento':       s.vto || '',
-        'Peso (g)':        s.peso || '',
-        'Peso 2':        s.peso2 || '',
-        'Color':             s.color || '',
-        'Altura':            s.altura || '',
-        'Forma':             s.forma || '',
-        'Estivado':          s.estivado || '',
-        'Miga':              s.miga || '',
-        'Cant. Rebanadas':   s.reb_cant || '',
-        'Grosor Rebanadas':  s.reb_grosor || '',
-        'Cocción':           s.coccion || '',
-        'Embollado':         s.embollado || '',
-        'Desgarro':          s.desgarro || '',
-        'Obs. producto':     s.obs || '',
-      }));
-      const ws = XLSX.utils.json_to_sheet(rows);
-      autoCol(ws, rows);
-      XLSX.utils.book_append_sheet(wb, ws, 'Pan de Molde');
-    }
-
-    if (!bolleria.length && !molde.length) {
-      showToast('No hay scorings para exportar', true); return;
-    }
-
-    const fecha = new Date().toISOString().slice(0,10);
-    XLSX.writeFile(wb, `romero-scoring-${fecha}.xlsx`);
-    showToast('✓ Excel descargado');
+    const items = filtrarItems(scoringsPorSubtipo(subtipoFiltro()), f);
+    const pref = { diario: 'romero-scoring-diario', normal: 'romero-scoring-normal' }[subtipoFiltro()] || 'romero-scoring';
+    exportarScoring(items, `${pref}-${new Date().toISOString().slice(0,10)}`);
   }
 }
+
+/* ══ EXPORTAR SCORING (reutilizable: general y por día) ══ */
+function exportarScoring(items, nombreArchivo) {
+  if (!items.length) { showToast('No hay scorings para exportar', true); return; }
+
+  const wb = XLSX.utils.book_new();
+  const bolleria = items.filter(s => s.categoria === 'bolleria');
+  const molde    = items.filter(s => s.categoria === 'molde');
+
+  const metaS = s => ({ 'Fecha': s.fecha ? new Date(s.fecha).toLocaleString('es-AR') : '', 'Turno': s.turno || '', 'Usuario': s.usuario || '', 'Producto': s.producto || '' });
+
+  if (bolleria.length) {
+    const rows = bolleria.map(s => ({ ...metaS(s),
+      'Lote':         s.lote || '',
+      'Vencimiento':  s.vto || '',
+      'Peso (g)':   s.peso || '',
+      'Peso 2':   s.peso2 || '',
+      'Envase':       s.envase || '',
+      'Color':        s.color || '',
+      'Base':         s.base_ || '',
+      'Altura':       s.altura || '',
+      'Desgarro':     s.desgarro || '',
+      'Manchas':      s.manchas || '',
+      'Harina':       s.harina || '',
+      'Estrías':      s.estrias || '',
+      'Estivado':     s.estivado || '',
+      'Miga':         s.miga || '',
+      'Desgrana':     s.desgrana || '',
+      'Descascara':   s.descascara || '',
+      'Obs. producto':s.obs || '',
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    autoCol(ws, rows);
+    XLSX.utils.book_append_sheet(wb, ws, 'Bollería');
+  }
+
+  if (molde.length) {
+    const rows = molde.map(s => ({ ...metaS(s),
+      'Lote':              s.lote || '',
+      'Vencimiento':       s.vto || '',
+      'Peso (g)':        s.peso || '',
+      'Peso 2':        s.peso2 || '',
+      'Color':             s.color || '',
+      'Altura':            s.altura || '',
+      'Forma':             s.forma || '',
+      'Estivado':          s.estivado || '',
+      'Miga':              s.miga || '',
+      'Cant. Rebanadas':   s.reb_cant || '',
+      'Grosor Rebanadas':  s.reb_grosor || '',
+      'Cocción':           s.coccion || '',
+      'Embollado':         s.embollado || '',
+      'Desgarro':          s.desgarro || '',
+      'Obs. producto':     s.obs || '',
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    autoCol(ws, rows);
+    XLSX.utils.book_append_sheet(wb, ws, 'Pan de Molde');
+  }
+
+  if (!bolleria.length && !molde.length) { showToast('No hay scorings para exportar', true); return; }
+
+  XLSX.writeFile(wb, `${nombreArchivo}.xlsx`);
+  showToast('✓ Excel descargado');
+}
+
+/* ══ EXPORTAR SCORING DE UN DÍA ══ */
+// Fecha local (no UTC): un scoring cargado a las 22:00 sigue siendo de ese día.
+function fechaLocalISO(iso) {
+  const d = new Date(iso);
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+const inputFechaScoringDia = document.getElementById('export-scoring-fecha');
+if (inputFechaScoringDia) inputFechaScoringDia.value = fechaLocalISO(new Date().toISOString());
+
+document.getElementById('btn-exportar-scoring-dia')?.addEventListener('click', () => {
+  const dia = inputFechaScoringDia?.value;
+  if (!dia) { showToast('Seleccioná una fecha', true); return; }
+
+  let items = scoringsPorSubtipo('diario').filter(s => s.fecha && fechaLocalISO(s.fecha) === dia);
+  if (state.role === 'pasante') items = items.filter(s => s.usuario === state.currentUser);
+
+  if (!items.length) { showToast('No hay scoring diario cargado el ' + dia, true); return; }
+
+  items.sort((a, b) => a.timestamp - b.timestamp);
+  exportarScoring(items, `romero-scoring-diario-${dia}`);
+});
