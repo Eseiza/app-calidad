@@ -17,6 +17,7 @@ const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const COL_REG     = "calidad-romero";
 const COL_SCORING = "calidad-scoring";
+const COL_PRUEBAS = "calidad-pruebas"; // Pruebas de pan (no visible para pasante)
 
 // ══ APPS SCRIPT URL — reemplazá con tu URL al publicar ══
 const APPS_SCRIPT_URL = ''; // ← pegá acá tu URL
@@ -38,10 +39,29 @@ const USERS = {
 const PRODUCTOS_BOLLERIA = ['Hamburguesa', 'Max', 'Pancho', 'Super'];
 const PRODUCTOS_MOLDE    = ['Multicereal', 'Integral', 'Salvado F', 'Salvado C', 'Lacteado F', 'Lacteado C'];
 
+/* ══ CAMPOS QUE SUMAN PUNTAJE (0-1-2) ══ */
+const SCORE_FIELDS_BOLLERIA = ['peso2','envase','color','base_','altura','largo',
+  'desgarro','manchas','harina','estrias','estivado','miga','desgrana','descascara'];
+const SCORE_FIELDS_MOLDE = ['peso2','color','altura','forma','estivado','miga',
+  'reb_cant','reb_grosor','coccion','embollado','desgarro'];
+
+function calcularPuntaje(s) {
+  const campos = s.categoria === 'molde' ? SCORE_FIELDS_MOLDE : SCORE_FIELDS_BOLLERIA;
+  let total = 0, count = 0;
+  campos.forEach(c => {
+    const v = s[c];
+    if (v !== undefined && v !== null && String(v).trim() !== '' && !isNaN(Number(v))) {
+      total += Number(v);
+      count++;
+    }
+  });
+  return count ? total : '';
+}
+
 /* ══ STATE ══ */
 const state = {
   role: null, currentUser: '',
-  registros: [], scorings: [],
+  registros: [], scorings: [], pruebas: [],
   turnoActivo: null,
   turnoScoringActivo: null,
   turnoScoringDiarioActivo: null,
@@ -56,9 +76,10 @@ const state = {
   rollosMarca: null,
   // ok-obs campos (bobinado, taco)
   okObsState: { bobinado: null, taco: null },
-  unsubReg: null, unsubSco: null,
+  unsubReg: null, unsubSco: null, unsubPru: null,
   editandoId: null,
   editandoColeccion: null,
+  editandoPruebaId: null,
 };
 
 /* ══ UTILS ══ */
@@ -122,11 +143,20 @@ function suscribirScoring() {
   }, err => showToast('Error Firestore scoring: ' + err.message, true));
 }
 
+function suscribirPruebas() {
+  const q = query(collection(db, COL_PRUEBAS), orderBy('timestamp', 'desc'));
+  state.unsubPru = onSnapshot(q, snap => {
+    state.pruebas = snap.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
+    refrescarVistas();
+  }, err => showToast('Error Firestore pruebas: ' + err.message, true));
+}
+
 /* ══ REFRESCAR VISTAS ══ */
 function refrescarVistas() {
   if (document.getElementById('historial-list'))     renderHistorial();
   if (document.getElementById('vis-historial-list')) renderHistorialVis();
   if (document.getElementById('vis-scoring-list'))   renderScoringVis();
+  if (document.getElementById('pruebas-list'))       renderPruebas();
 }
 
 /* ══ LOGIN ══ */
@@ -164,21 +194,25 @@ function doLogin() {
     if (state.role === 'pasante') {
       // Pasante puede ver historial pero solo sus propios registros
     }
+    const tabPruebasBtn = document.getElementById('tab-btn-pruebas');
+    if (tabPruebasBtn) tabPruebasBtn.style.display = (state.role === 'pasante') ? 'none' : '';
     actualizarFechas();
     setInterval(actualizarFechas, 60000);
   }
   suscribirRegistros();
   suscribirScoring();
+  if (state.role !== 'pasante') suscribirPruebas();
 }
 
 window.doLogout = function() {
   if (state.unsubReg) state.unsubReg();
   if (state.unsubSco) state.unsubSco();
+  if (state.unsubPru) state.unsubPru();
   Object.assign(state, {
-    role:null, currentUser:'', registros:[], scorings:[],
+    role:null, currentUser:'', registros:[], scorings:[], pruebas:[],
     turnoActivo:null, turnoScoringActivo:null, turnoScoringDiarioActivo:null,
     historialTipo:'registros',
-    editandoId:null, editandoColeccion:null,
+    editandoId:null, editandoColeccion:null, editandoPruebaId:null,
     camaraTipo: null, rollosMarca: null,
     transportes: { t1:null, t2:null, t3:null, t4:null },
     okObsState: { bobinado:null, taco:null },
@@ -588,7 +622,10 @@ function leerScoring() {
       envase:      leerCampo('sc-bol-envase'),
       color:       leerCampo('sc-bol-color'),
       base_:       leerCampo('sc-bol-base'),
+      alto_cm:     leerCampo('sc-bol-alto-cm'),
       altura:      leerCampo('sc-bol-altura'),
+      largo_cm:    leerCampo('sc-bol-largo-cm'),
+      largo:       leerCampo('sc-bol-largo'),
       desgarro:    leerCampo('sc-bol-desgarro'),
       manchas:     leerCampo('sc-bol-manchas'),
       harina:      leerCampo('sc-bol-harina'),
@@ -608,11 +645,13 @@ function leerScoring() {
       peso:      leerCampo('sc-mol-peso'),
       peso2:     leerCampo('sc-mol-peso2'),
       color:     leerCampo('sc-mol-color'),
-      altura:    leerCampo('sc-mol-altura'),
       forma:     leerCampo('sc-mol-forma'),
       estivado:  leerCampo('sc-mol-estivado'),
       miga:      leerCampo('sc-mol-miga'),
       reb_cant:      leerCampo('sc-mol-reb-cant'),
+      alto_cm:       leerCampo('sc-mol-alto-cm'),
+      altura:        leerCampo('sc-mol-altura'),
+      grosor_cm:     leerCampo('sc-mol-grosor-cm'),
       reb_grosor:    leerCampo('sc-mol-reb-grosor'),
       coccion:   leerCampo('sc-mol-coccion'),
       embollado: leerCampo('sc-mol-embollado'),
@@ -817,6 +856,7 @@ function buildScoringCard(s, showCrud) {
         </div>
       </div>
       <div class="registro-meta">${formatFecha(s.fecha)} · ${s.usuario}</div>
+      <div class="puntaje-total-row">PUNTAJE TOTAL <strong>${calcularPuntaje(s) === '' ? '—' : calcularPuntaje(s)}</strong></div>
       ${crudHtml}
     </div>`;
 }
@@ -986,7 +1026,9 @@ window.editarScoring = function(firestoreId) {
     if (sel) sel.value = s.producto || '';
     Object.entries({ 'sc-bol-lote':s.lote, 'sc-bol-vto':s.vto, 'sc-bol-peso':s.peso, 'sc-bol-peso2':s.peso2,
       'sc-bol-envase':s.envase, 'sc-bol-color':s.color,
-      'sc-bol-base':s.base_, 'sc-bol-altura':s.altura, 'sc-bol-desgarro':s.desgarro, 'sc-bol-manchas':s.manchas,
+      'sc-bol-base':s.base_,
+      'sc-bol-alto-cm':s.alto_cm, 'sc-bol-altura':s.altura, 'sc-bol-largo-cm':s.largo_cm, 'sc-bol-largo':s.largo,
+      'sc-bol-desgarro':s.desgarro, 'sc-bol-manchas':s.manchas,
       'sc-bol-harina':s.harina, 'sc-bol-estrias':s.estrias, 'sc-bol-estivado':s.estivado, 'sc-bol-miga':s.miga,
       'sc-bol-desgrana':s.desgrana, 'sc-bol-descascara':s.descascara, 'sc-bol-obs':s.obs })
       .forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
@@ -996,8 +1038,9 @@ window.editarScoring = function(firestoreId) {
     const sel = document.getElementById('sc-mol-producto');
     if (sel) sel.value = s.producto || '';
     Object.entries({ 'sc-mol-lote':s.lote, 'sc-mol-vto':s.vto, 'sc-mol-peso':s.peso, 'sc-mol-peso2':s.peso2, 'sc-mol-color':s.color,
-      'sc-mol-altura':s.altura, 'sc-mol-forma':s.forma, 'sc-mol-estivado':s.estivado, 'sc-mol-miga':s.miga,
-      'sc-mol-reb-cant':s.reb_cant, 'sc-mol-reb-grosor':s.reb_grosor, 'sc-mol-coccion':s.coccion, 'sc-mol-embollado':s.embollado, 'sc-mol-desgarro':s.desgarro, 'sc-mol-obs':s.obs })
+      'sc-mol-forma':s.forma, 'sc-mol-estivado':s.estivado, 'sc-mol-miga':s.miga,
+      'sc-mol-reb-cant':s.reb_cant, 'sc-mol-alto-cm':s.alto_cm, 'sc-mol-altura':s.altura, 'sc-mol-grosor-cm':s.grosor_cm,
+      'sc-mol-reb-grosor':s.reb_grosor, 'sc-mol-coccion':s.coccion, 'sc-mol-embollado':s.embollado, 'sc-mol-desgarro':s.desgarro, 'sc-mol-obs':s.obs })
       .forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
   }
 
@@ -1175,22 +1218,27 @@ window.verScoring = function(firestoreId) {
   document.getElementById('modal-meta').textContent =
     `${formatFecha(s.fecha)} · ${s.usuario} · Turno ${s.turno} · ${s.producto}${s.subtipo === 'diario' ? ' · Diario' : ''}${s.editado ? ' · (editado)' : ''}`;
 
+  const puntajeTotal = calcularPuntaje(s);
+
   const campo = (label, val) => val
     ? `<div class="modal-campo"><div class="modal-campo-label">${label}</div><div class="modal-campo-valor">${val}</div></div>` : '';
 
   const mapBolleria = { lote:'Lote', vto:'Vencimiento', peso:'Peso 1', peso2:'Peso 2', envase:'Envase',
-    color:'Color', base_:'Base', altura:'Altura', desgarro:'Desgarro', manchas:'Manchas',
+    color:'Color', base_:'Base', alto_cm:'Alto (cm)', altura:'Alto', largo_cm:'Largo (cm)', largo:'Largo',
+    desgarro:'Desgarro', manchas:'Manchas',
     harina:'Harina', estrias:'Estrías', estivado:'Estivado', miga:'Miga',
     desgrana:'Desgrana', descascara:'Descascara', obs:'Obs. producto' };
-  const mapMolde    = { lote:'Lote', vto:'Vencimiento', peso:'Peso 1', peso2:'Peso 2', color:'Color', altura:'Altura', forma:'Forma',
-    estivado:'Estivado', miga:'Miga', reb_cant:'Cant. rebanadas', reb_grosor:'Grosor rebanadas',
+  const mapMolde    = { lote:'Lote', vto:'Vencimiento', peso:'Peso 1', peso2:'Peso 2', color:'Color',
+    forma:'Forma', estivado:'Estivado', miga:'Miga', reb_cant:'Cant. rebanadas',
+    alto_cm:'Alto (cm)', altura:'Alto', grosor_cm:'Grosor (cm)', reb_grosor:'Grosor rebanadas',
     coccion:'Cocción', embollado:'Embollado', desgarro:'Desgarro', obs:'Obs. producto' };
 
   const map = s.categoria === 'molde' ? mapMolde : mapBolleria;
   const campos = Object.entries(map).map(([k, l]) => campo(l, s[k])).join('');
+  const puntajeHtml = `<div class="modal-campo"><div class="modal-campo-label">Puntaje Total</div><div class="modal-campo-valor">${puntajeTotal === '' ? '—' : puntajeTotal}</div></div>`;
 
   document.getElementById('modal-body').innerHTML =
-    `<div class="modal-seccion"><div class="modal-seccion-title">${s.producto}</div>${campos}</div>`;
+    `<div class="modal-seccion"><div class="modal-seccion-title">${s.producto}</div>${puntajeHtml}${campos}</div>`;
 
   document.getElementById('modal-overlay').style.display = 'flex';
 };
@@ -1347,7 +1395,10 @@ function exportarScoring(items, nombreArchivo) {
       'Envase':       s.envase || '',
       'Color':        s.color || '',
       'Base':         s.base_ || '',
-      'Altura':       s.altura || '',
+      'Alto (cm)':    s.alto_cm || '',
+      'Alto':         s.altura || '',
+      'Largo (cm)':   s.largo_cm || '',
+      'Largo':        s.largo || '',
       'Desgarro':     s.desgarro || '',
       'Manchas':      s.manchas || '',
       'Harina':       s.harina || '',
@@ -1357,6 +1408,7 @@ function exportarScoring(items, nombreArchivo) {
       'Desgrana':     s.desgrana || '',
       'Descascara':   s.descascara || '',
       'Obs. producto':s.obs || '',
+      'Puntaje Total': calcularPuntaje(s),
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     autoCol(ws, rows);
@@ -1370,16 +1422,19 @@ function exportarScoring(items, nombreArchivo) {
       'Peso (g)':        s.peso || '',
       'Peso 2':        s.peso2 || '',
       'Color':             s.color || '',
-      'Altura':            s.altura || '',
+      'Alto (cm)':         s.alto_cm || '',
+      'Alto':              s.altura || '',
       'Forma':             s.forma || '',
       'Estivado':          s.estivado || '',
       'Miga':              s.miga || '',
       'Cant. Rebanadas':   s.reb_cant || '',
+      'Grosor (cm)':       s.grosor_cm || '',
       'Grosor Rebanadas':  s.reb_grosor || '',
       'Cocción':           s.coccion || '',
       'Embollado':         s.embollado || '',
       'Desgarro':          s.desgarro || '',
       'Obs. producto':     s.obs || '',
+      'Puntaje Total':     calcularPuntaje(s),
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     autoCol(ws, rows);
@@ -1415,3 +1470,136 @@ document.getElementById('btn-exportar-scoring-dia')?.addEventListener('click', (
   items.sort((a, b) => a.timestamp - b.timestamp);
   exportarScoring(items, `romero-scoring-diario-${dia}`);
 });
+
+
+/* ══════════════════════════════════════
+   PRUEBAS DE PAN (estilo hoja / mail)
+   No visible para el rol "pasante"
+══════════════════════════════════════ */
+function renderPruebas() {
+  const list = document.getElementById('pruebas-list');
+  if (!list) return;
+  const items = state.pruebas;
+  list.innerHTML = items.length ? items.map(buildPruebaCard).join('') : emptyMsg();
+}
+
+function buildPruebaCard(p) {
+  const editTag = p.editado ? `<span class="badge-editado">editado</span>` : '';
+  const textoPlano = (p.contenido || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  const preview = textoPlano.slice(0, 140);
+  return `
+    <div class="registro-card prueba-card" onclick="abrirEditorPrueba('${p.firestoreId}')">
+      <div class="registro-header">
+        <div class="registro-titulo">${p.asunto || '(Sin asunto)'} ${editTag}</div>
+      </div>
+      <div class="registro-meta">${formatFecha(p.fecha)} · ${p.usuario}</div>
+      ${preview ? `<div class="prueba-preview">${preview}${textoPlano.length > 140 ? '…' : ''}</div>` : ''}
+      <div class="crud-btns" onclick="event.stopPropagation()">
+        <button class="crud-btn edit" onclick="abrirEditorPrueba('${p.firestoreId}')">✏️ Editar</button>
+        <button class="crud-btn del"  onclick="confirmarEliminarPrueba('${p.firestoreId}')">🗑️ Eliminar</button>
+      </div>
+    </div>`;
+}
+
+window.abrirEditorPrueba = function(firestoreId) {
+  state.editandoPruebaId = firestoreId || null;
+  const overlay = document.getElementById('prueba-editor-overlay');
+  const asunto  = document.getElementById('prueba-asunto');
+  const body    = document.getElementById('prueba-body');
+  const meta    = document.getElementById('prueba-meta');
+  if (!overlay || !asunto || !body || !meta) return;
+
+  if (firestoreId) {
+    const p = state.pruebas.find(x => x.firestoreId === firestoreId);
+    if (!p) return;
+    asunto.value = p.asunto || '';
+    body.innerHTML = p.contenido || '';
+    meta.textContent = `${p.usuario} · ${formatFecha(p.fecha)}${p.editado ? ' · (editado)' : ''}`;
+  } else {
+    asunto.value = '';
+    body.innerHTML = '';
+    meta.textContent = `${state.currentUser} · ${formatFecha(new Date().toISOString())}`;
+  }
+  overlay.style.display = 'flex';
+  setTimeout(() => asunto.focus(), 50);
+};
+
+function cerrarEditorPrueba() {
+  const overlay = document.getElementById('prueba-editor-overlay');
+  if (overlay) overlay.style.display = 'none';
+  state.editandoPruebaId = null;
+}
+document.getElementById('btn-cerrar-prueba')?.addEventListener('click', cerrarEditorPrueba);
+document.getElementById('prueba-editor-overlay')?.addEventListener('click', e => {
+  if (e.target.id === 'prueba-editor-overlay') cerrarEditorPrueba();
+});
+
+document.getElementById('btn-nueva-prueba')?.addEventListener('click', () => window.abrirEditorPrueba());
+
+/* Barra de formato — como un editor de mail: título, subtítulo, texto, negrita, ítems */
+document.querySelectorAll('#prueba-editor-overlay .hoja-toolbar button[data-cmd]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const body = document.getElementById('prueba-body');
+    const cmd = btn.dataset.cmd;
+    body.focus();
+    if (cmd === 'titulo')      document.execCommand('formatBlock', false, 'h2');
+    else if (cmd === 'subtitulo') document.execCommand('formatBlock', false, 'h3');
+    else if (cmd === 'texto')  document.execCommand('formatBlock', false, 'p');
+    else if (cmd === 'bold')   document.execCommand('bold');
+    else if (cmd === 'item')   document.execCommand('insertUnorderedList');
+    else if (cmd === 'clear') {
+      if (confirm('¿Vaciar todo el contenido de la hoja?')) body.innerHTML = '';
+    }
+  });
+});
+
+document.getElementById('btn-guardar-prueba')?.addEventListener('click', async () => {
+  const asunto    = leerCampo('prueba-asunto');
+  const bodyEl    = document.getElementById('prueba-body');
+  const contenido = bodyEl ? bodyEl.innerHTML.trim() : '';
+  if (!asunto) { showToast('Ingresá un asunto', true); return; }
+  if (!contenido || contenido === '<br>') { showToast('Escribí algo en el contenido', true); return; }
+
+  const btn = document.getElementById('btn-guardar-prueba');
+  btn.disabled = true; btn.textContent = 'GUARDANDO...';
+
+  try {
+    if (state.editandoPruebaId) {
+      await updateDoc(doc(db, COL_PRUEBAS, state.editandoPruebaId), {
+        asunto, contenido, editado: true, fechaEdicion: new Date().toISOString(),
+      });
+      showToast('✓ Nota actualizada');
+    } else {
+      const ahora = new Date();
+      await addDoc(collection(db, COL_PRUEBAS), {
+        asunto, contenido,
+        timestamp: ahora.getTime(), fecha: ahora.toISOString(),
+        usuario: state.currentUser, rol: state.role,
+      });
+      showToast('✓ Nota guardada');
+    }
+    btn.disabled = false; btn.textContent = 'GUARDAR ✓';
+    cerrarEditorPrueba();
+  } catch (e) {
+    showToast('Error al guardar: ' + e.message, true);
+    btn.disabled = false; btn.textContent = 'GUARDAR ✓';
+  }
+});
+
+window.confirmarEliminarPrueba = function(firestoreId) {
+  const overlay = document.getElementById('confirm-overlay');
+  const msg     = document.getElementById('confirm-msg');
+  if (!overlay || !msg) return;
+  msg.textContent = '¿Eliminás esta nota? Esta acción no se puede deshacer.';
+  overlay.style.display = 'flex';
+  document.getElementById('confirm-si').onclick = async () => {
+    overlay.style.display = 'none';
+    try {
+      await deleteDoc(doc(db, COL_PRUEBAS, firestoreId));
+      showToast('✓ Eliminado correctamente');
+    } catch (e) {
+      showToast('Error al eliminar: ' + e.message, true);
+    }
+  };
+  document.getElementById('confirm-no').onclick = () => { overlay.style.display = 'none'; };
+};
