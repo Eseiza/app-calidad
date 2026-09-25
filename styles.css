@@ -500,3 +500,56 @@ header {
   .hora-levado-part { width: 60px !important; font-size: 18px; }
 }
 .export-scoring-dia { margin-top:16px; padding-top:14px; border-top:1px solid var(--border, rgba(255,255,255,.1)); }
+
+/* ══ PRUEBAS DE PAN — hoja tipo mail ══ */
+.prueba-card { border-left-color: var(--amber); }
+.prueba-card:hover { box-shadow: var(--shadow-soft), var(--shadow-glow-amber); }
+.prueba-preview { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+
+.hoja-wrap { width: 100%; max-width: 760px; margin: 0 auto; padding: 16px 4px 40px; }
+.hoja-toolbar-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.hoja-toolbar-top-title { font-family: var(--font-mono); font-size: 11px; letter-spacing: 2px; color: var(--text); }
+
+.hoja {
+  background: #fbfaf6;
+  color: #201f1c;
+  border-radius: 6px;
+  padding: 36px 34px 44px;
+  min-height: 70vh;
+  box-shadow: 0 24px 60px rgba(0,0,0,.5), 0 0 0 1px rgba(0,0,0,.08);
+  font-family: var(--font-body);
+}
+.hoja-header { border-bottom: 2px solid #e6e3da; padding-bottom: 14px; margin-bottom: 18px; }
+.hoja-campo label { display: block; font-family: var(--font-mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: #9a9587; margin-bottom: 4px; }
+.hoja-campo input {
+  width: 100%; border: none; border-bottom: 1px solid #ddd8ca; background: transparent;
+  font-family: var(--font-head); font-size: 22px; letter-spacing: 1px; color: #1c1c1a;
+  padding: 4px 0 8px; outline: none;
+}
+.hoja-campo input:focus { border-bottom-color: var(--amber); }
+.hoja-meta { font-family: var(--font-mono); font-size: 10px; color: #a39d8c; margin-top: 8px; }
+
+.hoja-toolbar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px dashed #ddd8ca; }
+.hoja-toolbar button {
+  background: #efece2; border: 1px solid #ddd8ca; color: #4a4638;
+  font-size: 11px; font-family: var(--font-body); font-weight: 600; letter-spacing: .5px;
+  padding: 7px 12px; border-radius: 6px; cursor: pointer; transition: background .15s;
+}
+.hoja-toolbar button:hover { background: #e2ded0; }
+.hoja-toolbar-sep { flex: 1; }
+
+.hoja-body {
+  min-height: 380px; outline: none;
+  font-size: 15px; line-height: 1.75; color: #262420;
+}
+.hoja-body:empty::before { content: attr(data-placeholder); color: #b3ac98; font-style: italic; }
+.hoja-body h2 { font-family: var(--font-head); font-size: 23px; letter-spacing: 1px; color: #1c1c1a; margin: 20px 0 8px; }
+.hoja-body h2:first-child { margin-top: 0; }
+.hoja-body h3 { font-size: 16px; font-weight: 700; color: #3a3730; margin: 16px 0 6px; }
+.hoja-body p { margin: 6px 0; }
+.hoja-body ul { margin: 8px 0 10px 22px; }
+.hoja-body li { margin: 3px 0; }
+
+/* ══ PUNTAJE TOTAL EN TARJETA DE SCORING (Historial) ══ */
+.puntaje-total-row { margin-top:8px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 1.5px; color: var(--muted); display:flex; align-items:center; gap:8px; }
+.puntaje-total-row strong { font-family: var(--font-head); font-size: 18px; letter-spacing: 1px; color: var(--accent); }
