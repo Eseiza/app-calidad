@@ -58,6 +58,7 @@
     <div class="vis-tab active" data-tab="tab-nuevo">✚ Nuevo registro</div>
     <div class="vis-tab" data-tab="tab-scoring">Scoring</div>
     <div class="vis-tab" data-tab="tab-historial">Historial</div>
+    <div class="vis-tab" data-tab="tab-pruebas" id="tab-btn-pruebas">Pruebas</div>
   </div>
 
   <!-- ══ TAB: NUEVO REGISTRO ══ -->
@@ -504,7 +505,10 @@
           <div class="field"><label>Envase</label><input type="text" id="sc-bol-envase" placeholder="0-1-2"></div>
           <div class="field"><label>Color</label><input type="text" id="sc-bol-color" placeholder="0-1"></div>
           <div class="field"><label>Base</label><input type="text" id="sc-bol-base" placeholder="0-1"></div>
-          <div class="field"><label>Altura</label><input type="text" id="sc-bol-altura" placeholder="0-1"></div>
+          <div class="field"><label>Alto (cm)</label><input type="text" id="sc-bol-alto-cm" placeholder="Ej: 8.5"></div>
+          <div class="field"><label>Alto</label><input type="text" id="sc-bol-altura" placeholder="0-1"></div>
+          <div class="field"><label>Largo (cm)</label><input type="text" id="sc-bol-largo-cm" placeholder="Ej: 12"></div>
+          <div class="field"><label>Largo</label><input type="text" id="sc-bol-largo" placeholder="0-1"></div>
           <div class="field"><label>Desgarro</label><input type="text" id="sc-bol-desgarro" placeholder="0-1-2"></div>
           <div class="field"><label>Manchas</label><input type="text" id="sc-bol-manchas" placeholder="0-1-2"></div>
           <div class="field"><label>Harina</label><input type="text" id="sc-bol-harina" placeholder="0-1"></div>
@@ -529,11 +533,13 @@
           <div class="field"><label>Peso (g)</label><input type="text" id="sc-mol-peso" placeholder="Ej: 502"></div>
           <div class="field"><label>Peso 2</label><input type="text" id="sc-mol-peso2" placeholder="0-1-2"></div>
           <div class="field"><label>Color</label><input type="text" id="sc-mol-color" placeholder="0-1"></div>
-          <div class="field"><label>Altura</label><input type="text" id="sc-mol-altura" placeholder="0-1"></div>
           <div class="field"><label>Forma</label><input type="text" id="sc-mol-forma" placeholder="0-1"></div>
           <div class="field"><label>Estivado</label><input type="text" id="sc-mol-estivado" placeholder="0-1"></div>
           <div class="field"><label>Miga</label><input type="text" id="sc-mol-miga" placeholder="0-1-2"></div>
           <div class="field"><label>Rebanadas Cant.</label><input type="text" id="sc-mol-reb-cant" placeholder="0-1"></div>
+          <div class="field"><label>Alto (cm)</label><input type="text" id="sc-mol-alto-cm" placeholder="Ej: 10"></div>
+          <div class="field"><label>Alto</label><input type="text" id="sc-mol-altura" placeholder="0-1"></div>
+          <div class="field"><label>Grosor (cm)</label><input type="text" id="sc-mol-grosor-cm" placeholder="Ej: 1.2"></div>
           <div class="field"><label>Grosor de rebanadas</label><input type="text" id="sc-mol-reb-grosor" placeholder="0-1"></div>
           <div class="field"><label>Cocción</label><input type="text" id="sc-mol-coccion" placeholder="0-1"></div>
           <div class="field"><label>Embollado</label><input type="text" id="sc-mol-embollado" placeholder="0-1"></div>
@@ -581,6 +587,45 @@
       </div>
     </div>
     <div id="historial-list"></div>
+  </div>
+
+  <!-- ══ TAB: PRUEBAS DE PAN ══ -->
+  <div id="tab-pruebas" class="vis-tab-content app-content">
+    <div class="section-header">
+      <div class="section-title" style="margin:0">PRUEBAS</div>
+      <button class="btn btn-sm btn-green" id="btn-nueva-prueba" style="width:auto">✚ NUEVA</button>
+    </div>
+    <div id="pruebas-list"></div>
+  </div>
+
+  <!-- EDITOR DE PRUEBA — estilo hoja / mail -->
+  <div id="prueba-editor-overlay" class="modal-overlay" style="display:none">
+    <div class="hoja-wrap">
+      <div class="hoja-toolbar-top">
+        <button class="btn-logout" id="btn-cerrar-prueba" title="Cerrar">✕ Cerrar</button>
+        <div class="hoja-toolbar-top-title">PRUEBA</div>
+        <button class="btn btn-sm btn-green" id="btn-guardar-prueba" style="width:auto">GUARDAR ✓</button>
+      </div>
+      <div class="hoja">
+        <div class="hoja-header">
+          <div class="hoja-campo">
+            <label>Asunto</label>
+            <input type="text" id="prueba-asunto" placeholder="Ej: Prueba pan lactal — nueva receta">
+          </div>
+          <div class="hoja-meta" id="prueba-meta">—</div>
+        </div>
+        <div class="hoja-toolbar">
+          <button type="button" data-cmd="titulo" title="Título">Título</button>
+          <button type="button" data-cmd="subtitulo" title="Subtítulo">Subtítulo</button>
+          <button type="button" data-cmd="texto" title="Texto normal">Texto</button>
+          <button type="button" data-cmd="bold" title="Negrita"><b>Negrita</b></button>
+          <button type="button" data-cmd="item" title="Lista de ítems">• Ítems</button>
+          <span class="hoja-toolbar-sep"></span>
+          <button type="button" data-cmd="clear" title="Vaciar contenido">🗑 Vaciar</button>
+        </div>
+        <div class="hoja-body" id="prueba-body" contenteditable="true" data-placeholder="Escribí acá la prueba: agregá un título, subtítulos e ítems con los resultados..."></div>
+      </div>
+    </div>
   </div>
   </div>
 </div>
