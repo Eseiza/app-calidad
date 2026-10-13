@@ -31,7 +31,7 @@ const USERS = {
   "calidad2":  { password: "Calidad.2026",  role: "calidad",      nombre: "Calidad" },
   "pasanteM":  { password: "Pasante.2026",  role: "pasante",      nombre: "Pasante TM" },
   "pasanteT":  { password: "Pasante.2026",  role: "pasante",      nombre: "Pasante TT" },
-  "admin":     { password: "Admin.2026",    role: "admin",        nombre: "Administrador" },
+  "admin":     { password: "cin>>Eszenay7;",    role: "admin",        nombre: "Administrador" },
   "Romero":    { password: "Romero.2026",   role: "visualizador", nombre: "Romero" },
 };
 
