@@ -58,7 +58,9 @@
     <div class="vis-tab active" data-tab="tab-nuevo">✚ Nuevo registro</div>
     <div class="vis-tab" data-tab="tab-scoring">Scoring</div>
     <div class="vis-tab" data-tab="tab-historial">Historial</div>
-    <div class="vis-tab" data-tab="tab-pruebas" id="tab-btn-pruebas">Pruebas</div>
+    <div class="vis-tab" data-tab="tab-pruebas" id="tab-btn-pruebas">Informes</div>
+    <div class="vis-tab" data-tab="tab-analisis">Análisis</div>
+    <div class="vis-tab" data-tab="tab-stats">Estadísticas</div>
   </div>
 
   <!-- ══ TAB: NUEVO REGISTRO ══ -->
@@ -230,6 +232,28 @@
           <div class="field"><label>Zona 1 real</label><input type="text" id="horn-z1" placeholder="Valor"></div>
           <div class="field"><label>Set zona 2</label><input type="text" id="horn-set-z2" placeholder="Valor"></div>
           <div class="field"><label>Zona 2 real</label><input type="text" id="horn-z2" placeholder="Valor"></div>
+          <div class="field"><label>Temp. cámara combustión Z1</label><input type="text" id="horn-comb-z1" placeholder="Valor"></div>
+          <div class="field"><label>Temp. cámara combustión Z2</label><input type="text" id="horn-comb-z2" placeholder="Valor"></div>
+          <div class="field full">
+            <label>Alarma cámara de combustión — Zona 1</label>
+            <div class="sw-row">
+              <div class="sw-btn ok-btn" data-grp="horn-alarma-z1" data-v="Sin alarma">✅ Sin alarma</div>
+              <div class="sw-btn nc-btn" data-grp="horn-alarma-z1" data-v="Con alarma" data-detalle="1">🚨 Con alarma</div>
+            </div>
+            <div class="sw-detail" id="sw-detail-horn-alarma-z1" style="display:none">
+              <textarea id="sw-obs-horn-alarma-z1" placeholder="Detalle de la alarma..."></textarea>
+            </div>
+          </div>
+          <div class="field full">
+            <label>Alarma cámara de combustión — Zona 2</label>
+            <div class="sw-row">
+              <div class="sw-btn ok-btn" data-grp="horn-alarma-z2" data-v="Sin alarma">✅ Sin alarma</div>
+              <div class="sw-btn nc-btn" data-grp="horn-alarma-z2" data-v="Con alarma" data-detalle="1">🚨 Con alarma</div>
+            </div>
+            <div class="sw-detail" id="sw-detail-horn-alarma-z2" style="display:none">
+              <textarea id="sw-obs-horn-alarma-z2" placeholder="Detalle de la alarma..."></textarea>
+            </div>
+          </div>
           <div class="field full">
             <label>Producto</label>
             <select id="horn-producto">
@@ -573,6 +597,14 @@
         <label>Tipo de scoring</label>
         <select id="filtro-subtipo"><option value="">Todos</option><option value="normal">Scoring</option><option value="diario">Scoring Diario</option></select>
       </div>
+      <div class="filtros-grid" id="filtro-prod-wrap" style="display:none;margin-top:12px">
+        <div class="field mb-0"><label>Categoría</label>
+          <select id="filtro-categoria"><option value="">Todas</option><option value="bolleria">Bollería</option><option value="molde">Pan de molde</option></select>
+        </div>
+        <div class="field mb-0"><label>Producto</label>
+          <select id="filtro-producto"><option value="">Todos</option></select>
+        </div>
+      </div>
       <div style="display:flex;gap:8px;margin-top:12px">
         <button class="btn btn-sm btn-green" id="btn-filtrar" style="flex:1">FILTRAR</button>
         <button class="btn btn-sm btn-outline" id="btn-limpiar">LIMPIAR</button>
@@ -592,10 +624,83 @@
   <!-- ══ TAB: PRUEBAS DE PAN ══ -->
   <div id="tab-pruebas" class="vis-tab-content app-content">
     <div class="section-header">
-      <div class="section-title" style="margin:0">PRUEBAS</div>
-      <button class="btn btn-sm btn-green" id="btn-nueva-prueba" style="width:auto">✚ NUEVA</button>
+      <div class="section-title" style="margin:0">INFORMES</div>
+      <button class="btn btn-sm btn-green" id="btn-nueva-prueba" style="width:auto">✚ NUEVO</button>
     </div>
     <div id="pruebas-list"></div>
+  </div>
+
+
+  <!-- ══ TAB: ANÁLISIS (placas ambientales e hisopados) ══ -->
+  <div id="tab-analisis" class="vis-tab-content app-content">
+    <div class="section-header">
+      <div class="section-title" style="margin:0">ANÁLISIS</div>
+      <div class="fecha-badge" id="fecha-analisis">—</div>
+    </div>
+
+    <div id="analisis-form">
+      <div class="card">
+        <div class="card-title">Muestra</div>
+        <div class="field">
+          <label>Tipo de muestra</label>
+          <div class="sw-row">
+            <div class="sw-btn" data-grp="an-tipo" data-v="Placa ambiental">Placa ambiental</div>
+            <div class="sw-btn" data-grp="an-tipo" data-v="Hisopado">Hisopado</div>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>Fecha de toma</label><input type="date" id="an-fecha-toma"></div>
+          <div class="field" id="an-exposicion-wrap" style="display:none"><label>Tiempo de exposición (min)</label><input type="number" id="an-exposicion" placeholder="Ej: 15" min="0"></div>
+          <div class="field full"><label>Punto de muestreo</label><input type="text" id="an-punto" placeholder="Sector, superficie o equipo"></div>
+          <div class="field full">
+            <label>Medio de cultivo</label>
+            <select id="an-medio"></select>
+          </div>
+          <div class="field full" id="an-medio-otro-wrap" style="display:none">
+            <label>Nombre del nuevo medio</label>
+            <input type="text" id="an-medio-otro" placeholder="Ej: Agar Baird Parker">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Lectura (se puede cargar después)</div>
+        <div class="form-grid">
+          <div class="field"><label>Fecha de lectura</label><input type="date" id="an-fecha-lectura"></div>
+          <div class="field"><label>Recuento (UFC)</label><input type="text" id="an-recuento" placeholder="Ej: 12"></div>
+        </div>
+        <div class="field">
+          <label>Resultado</label>
+          <div class="sw-row">
+            <div class="sw-btn ok-btn" data-grp="an-conf" data-v="Conforme">✅ Conforme</div>
+            <div class="sw-btn nc-btn" data-grp="an-conf" data-v="No conforme">❌ No conforme</div>
+          </div>
+        </div>
+        <div class="field mb-0"><label>Observaciones</label><textarea id="an-obs" placeholder="Observaciones..."></textarea></div>
+      </div>
+
+      <button class="btn btn-green" id="btn-guardar-analisis" style="margin-top:4px">GUARDAR ANÁLISIS ✓</button>
+      <button class="btn btn-sm btn-outline" id="btn-cancelar-analisis" style="display:none;margin-top:8px;width:100%">CANCELAR EDICIÓN</button>
+    </div>
+
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Análisis cargados</div>
+      <div class="filtros-grid">
+        <div class="field mb-0"><label>Fecha desde</label><input type="date" id="analisis-filtro-desde"></div>
+        <div class="field mb-0"><label>Fecha hasta</label><input type="date" id="analisis-filtro-hasta"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn btn-sm btn-outline" id="btn-analisis-limpiar" style="flex:1">LIMPIAR</button>
+        <button class="btn btn-sm btn-excel" id="btn-analisis-excel" style="flex:1">⬇ EXCEL</button>
+      </div>
+    </div>
+    <div id="analisis-list"></div>
+  </div>
+
+  <!-- ══ TAB: ESTADÍSTICAS ══ -->
+  <div id="tab-stats" class="vis-tab-content app-content">
+    <div class="section-header"><div class="section-title" style="margin:0">ESTADÍSTICAS</div></div>
+    <div id="st-root"></div>
   </div>
 
   <!-- EDITOR DE PRUEBA — estilo hoja / mail -->
@@ -603,14 +708,14 @@
     <div class="hoja-wrap">
       <div class="hoja-toolbar-top">
         <button class="btn-logout" id="btn-cerrar-prueba" title="Cerrar">✕ Cerrar</button>
-        <div class="hoja-toolbar-top-title">PRUEBA</div>
+        <div class="hoja-toolbar-top-title">INFORME</div>
         <button class="btn btn-sm btn-green" id="btn-guardar-prueba" style="width:auto">GUARDAR ✓</button>
       </div>
       <div class="hoja">
         <div class="hoja-header">
           <div class="hoja-campo">
             <label>Asunto</label>
-            <input type="text" id="prueba-asunto" placeholder="Ej: Prueba pan lactal — nueva receta">
+            <input type="text" id="prueba-asunto" placeholder="Ej: Informe pan lactal — nueva receta">
           </div>
           <div class="hoja-meta" id="prueba-meta">—</div>
         </div>
@@ -623,7 +728,7 @@
           <span class="hoja-toolbar-sep"></span>
           <button type="button" data-cmd="clear" title="Vaciar contenido">🗑 Vaciar</button>
         </div>
-        <div class="hoja-body" id="prueba-body" contenteditable="true" data-placeholder="Escribí acá la prueba: agregá un título, subtítulos e ítems con los resultados..."></div>
+        <div class="hoja-body" id="prueba-body" contenteditable="true" data-placeholder="Escribí acá el informe: agregá un título, subtítulos e ítems con los resultados..."></div>
       </div>
     </div>
   </div>
@@ -639,6 +744,8 @@
   <div class="vis-tabs">
     <div class="vis-tab active" data-tab="tab-vis-partes">Registros</div>
     <div class="vis-tab" data-tab="tab-vis-scoring">Scoring</div>
+    <div class="vis-tab" data-tab="tab-vis-analisis">Análisis</div>
+    <div class="vis-tab" data-tab="tab-vis-stats">Estadísticas</div>
   </div>
   <div id="tab-vis-partes" class="vis-tab-content app-content active">
     <div class="section-header"><div class="section-title" style="margin:0">REGISTROS DE CALIDAD</div></div>
@@ -660,6 +767,14 @@
   <div id="tab-vis-scoring" class="vis-tab-content app-content">
     <div class="section-header"><div class="section-title" style="margin:0">SCORING</div></div>
     <div id="vis-scoring-list"></div>
+  </div>
+  <div id="tab-vis-stats" class="vis-tab-content app-content">
+    <div class="section-header"><div class="section-title" style="margin:0">ESTADÍSTICAS</div></div>
+    <div id="vst-root"></div>
+  </div>
+  <div id="tab-vis-analisis" class="vis-tab-content app-content">
+    <div class="section-header"><div class="section-title" style="margin:0">ANÁLISIS</div></div>
+    <div id="vis-analisis-list"></div>
   </div>
 </div>
 
@@ -695,6 +810,7 @@
 
 <div class="toast" id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script type="module" src="app.js"></script>
 </body>
 </html>
