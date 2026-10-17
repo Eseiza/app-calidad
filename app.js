@@ -157,6 +157,8 @@ function refrescarVistas() {
   if (document.getElementById('vis-historial-list')) renderHistorialVis();
   if (document.getElementById('vis-scoring-list'))   renderScoringVis();
   if (document.getElementById('pruebas-list'))       renderPruebas();
+  renderAnalisis();
+  renderStatsVisibles();
 }
 
 /* ══ LOGIN ══ */
@@ -202,6 +204,7 @@ function doLogin() {
   suscribirRegistros();
   suscribirScoring();
   if (state.role !== 'pasante') suscribirPruebas();
+  suscribirAnalisis();
 }
 
 window.doLogout = function() {
@@ -217,6 +220,7 @@ window.doLogout = function() {
     transportes: { t1:null, t2:null, t3:null, t4:null },
     okObsState: { bobinado:null, taco:null },
   });
+  resetNuevasPestanas();
   document.getElementById('screen-main').style.display = 'none';
   document.getElementById('screen-vis').style.display  = 'none';
   document.getElementById('screen-login').style.display = 'flex';
@@ -229,7 +233,7 @@ function actualizarFechas() {
   const ahora = new Date();
   const txt = ahora.toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long' }) +
               ' · ' + ahora.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-  ['fecha-actual','fecha-scoring','fecha-scoring-diario'].forEach(id => {
+  ['fecha-actual','fecha-scoring','fecha-scoring-diario','fecha-analisis'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = txt;
   });
@@ -421,6 +425,8 @@ function leerFormulario() {
   const t4 = leerTransporte('t4');
   const bobinado = leerOkObs('bobinado');
   const taco     = leerOkObs('taco');
+  const alarmaZ1 = swLeer('horn-alarma-z1');
+  const alarmaZ2 = swLeer('horn-alarma-z2');
 
   return {
     recepcion: {
@@ -467,6 +473,12 @@ function leerFormulario() {
       z1:        leerCampo('horn-z1'),
       set_z2:    leerCampo('horn-set-z2'),
       z2:        leerCampo('horn-z2'),
+      comb_z1:        leerCampo('horn-comb-z1'),
+      alarma_z1:      alarmaZ1.estado,
+      alarma_z1_obs:  alarmaZ1.obs,
+      comb_z2:        leerCampo('horn-comb-z2'),
+      alarma_z2:      alarmaZ2.estado,
+      alarma_z2_obs:  alarmaZ2.obs,
       producto:  hornProd,
       tiempo_min: leerCampo('horn-tiempo'),
       t1_estado: t1.estado, t1_obs: t1.obs,
@@ -530,6 +542,7 @@ function limpiarFormulario() {
   state.okObsState    = { bobinado: null, taco: null };
   state.editandoId    = null;
   state.editandoColeccion = null;
+  swLimpiarEn('#sec-horno');
   const btn = document.getElementById('btn-guardar-registro');
   if (btn) btn.textContent = 'GUARDAR REGISTRO ✓';
   irSeccion('sec-recepcion');
@@ -744,7 +757,8 @@ document.querySelectorAll('.filtro-tipo-btn').forEach(btn => {
 document.getElementById('btn-filtrar')?.addEventListener('click', renderHistorial);
 document.getElementById('filtro-subtipo')?.addEventListener('change', renderHistorial);
 document.getElementById('btn-limpiar')?.addEventListener('click', () => {
-  ['filtro-desde','filtro-hasta','filtro-turno','filtro-usuario','filtro-subtipo'].forEach(id => { document.getElementById(id).value = ''; });
+  ['filtro-desde','filtro-hasta','filtro-turno','filtro-usuario','filtro-subtipo','filtro-categoria'].forEach(id => { document.getElementById(id).value = ''; });
+  poblarFiltroProductos();
   renderHistorial();
 });
 document.getElementById('vis-btn-filtrar')?.addEventListener('click', renderHistorialVis);
@@ -788,6 +802,8 @@ function renderHistorial() {
   if (bloqueDia) bloqueDia.style.display = state.historialTipo === 'scoring' ? 'block' : 'none';
   const wrapSub = document.getElementById('filtro-subtipo-wrap');
   if (wrapSub) wrapSub.style.display = state.historialTipo === 'scoring' ? 'block' : 'none';
+  const wrapProd = document.getElementById('filtro-prod-wrap');
+  if (wrapProd) wrapProd.style.display = state.historialTipo === 'scoring' ? '' : 'none';
   const f = getFilters();
   const esPasante = state.role === 'pasante';
   if (state.historialTipo === 'registros') {
@@ -795,7 +811,7 @@ function renderHistorial() {
     if (esPasante) items = items.filter(r => r.usuario === state.currentUser);
     list.innerHTML = items.length ? items.map(r => buildRegistroCard(r, !esPasante)).join('') : emptyMsg();
   } else {
-    let items = filtrarItems(scoringsPorSubtipo(subtipoFiltro()), f);
+    let items = filtrarScoringProd(filtrarItems(scoringsPorSubtipo(subtipoFiltro()), f));
     if (esPasante) items = items.filter(s => s.usuario === state.currentUser);
     list.innerHTML = items.length ? items.map(s => buildScoringCard(s, !esPasante)).join('') : emptyMsg();
   }
@@ -934,7 +950,7 @@ window.editarRegistro = function(firestoreId) {
 
   // Horno
   Object.entries({ 'horn-set-z1':r.horno?.set_z1, 'horn-z1':r.horno?.z1, 'horn-set-z2':r.horno?.set_z2,
-    'horn-z2':r.horno?.z2, 'horn-tiempo':r.horno?.tiempo_min, 'horn-obs':r.horno?.obs
+    'horn-z2':r.horno?.z2, 'horn-comb-z1':r.horno?.comb_z1, 'horn-comb-z2':r.horno?.comb_z2, 'horn-tiempo':r.horno?.tiempo_min, 'horn-obs':r.horno?.obs
   }).forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
   const hornProd = document.getElementById('horn-producto');
   if (hornProd && r.horno?.producto) {
@@ -942,6 +958,8 @@ window.editarRegistro = function(firestoreId) {
     if (exists) { hornProd.value = r.horno.producto; }
     else { hornProd.value = 'Otro'; document.getElementById('horn-producto-otro-wrap').style.display = 'block'; document.getElementById('horn-producto-otro').value = r.horno.producto; }
   }
+  swSet('horn-alarma-z1', r.horno?.alarma_z1, r.horno?.alarma_z1_obs);
+  swSet('horn-alarma-z2', r.horno?.alarma_z2, r.horno?.alarma_z2_obs);
   // Transportes 1-4
   ['t1','t2','t3','t4'].forEach(t => {
     const estado = r.horno?.[`${t}_estado`] || null;
@@ -1169,6 +1187,12 @@ window.verRegistro = function(firestoreId) {
       campo('Zona 1', r.horno?.z1, 'modal-campo-valor'),
       campo('Set zona 2', r.horno?.set_z2, 'modal-campo-valor'),
       campo('Zona 2', r.horno?.z2, 'modal-campo-valor'),
+      campo('Temp. cámara combustión Z1', r.horno?.comb_z1, 'modal-campo-valor'),
+      campo('Alarma combustión Z1', r.horno?.alarma_z1, r.horno?.alarma_z1 === 'Con alarma' ? 'modal-campo-valor danger' : 'modal-campo-valor ok'),
+      campo('Detalle alarma Z1', r.horno?.alarma_z1_obs, 'modal-campo-valor'),
+      campo('Temp. cámara combustión Z2', r.horno?.comb_z2, 'modal-campo-valor'),
+      campo('Alarma combustión Z2', r.horno?.alarma_z2, r.horno?.alarma_z2 === 'Con alarma' ? 'modal-campo-valor danger' : 'modal-campo-valor ok'),
+      campo('Detalle alarma Z2', r.horno?.alarma_z2_obs, 'modal-campo-valor'),
       campo('Tiempo cocción', r.horno?.tiempo_min ? r.horno.tiempo_min + ' min' : '', 'modal-campo-valor'),
       transporteHtml(1, 't1'),
       transporteHtml(2, 't2'),
@@ -1316,6 +1340,12 @@ function exportarExcel() {
         'Zona 1 Real':      r.horno?.z1 || '',
         'Set Zona 2':       r.horno?.set_z2 || '',
         'Zona 2 Real':      r.horno?.z2 || '',
+        'Temp. Comb. Z1':   r.horno?.comb_z1 || '',
+        'Alarma Comb. Z1':  r.horno?.alarma_z1 || '',
+        'Alarma Comb. Z1 Obs': r.horno?.alarma_z1_obs || '',
+        'Temp. Comb. Z2':   r.horno?.comb_z2 || '',
+        'Alarma Comb. Z2':  r.horno?.alarma_z2 || '',
+        'Alarma Comb. Z2 Obs': r.horno?.alarma_z2_obs || '',
         'Tiempo (min)':     r.horno?.tiempo_min || '',
         'Transp. 1':        r.horno?.t1_estado || '',
         'Transp. 1 Obs':    r.horno?.t1_obs || '',
@@ -1370,8 +1400,10 @@ function exportarExcel() {
     showToast('✓ Excel descargado');
 
   } else {
-    const items = filtrarItems(scoringsPorSubtipo(subtipoFiltro()), f);
-    const pref = { diario: 'romero-scoring-diario', normal: 'romero-scoring-normal' }[subtipoFiltro()] || 'romero-scoring';
+    const items = filtrarScoringProd(filtrarItems(scoringsPorSubtipo(subtipoFiltro()), f));
+    let pref = { diario: 'romero-scoring-diario', normal: 'romero-scoring-normal' }[subtipoFiltro()] || 'romero-scoring';
+    const prod = document.getElementById('filtro-producto')?.value || document.getElementById('filtro-categoria')?.value || '';
+    if (prod) pref += '-' + prod.toLowerCase().replace(/\s+/g, '-');
     exportarScoring(items, `${pref}-${new Date().toISOString().slice(0,10)}`);
   }
 }
@@ -1462,7 +1494,7 @@ document.getElementById('btn-exportar-scoring-dia')?.addEventListener('click', (
   const dia = inputFechaScoringDia?.value;
   if (!dia) { showToast('Seleccioná una fecha', true); return; }
 
-  let items = scoringsPorSubtipo('diario').filter(s => s.fecha && fechaLocalISO(s.fecha) === dia);
+  let items = filtrarScoringProd(scoringsPorSubtipo('diario').filter(s => s.fecha && fechaLocalISO(s.fecha) === dia));
   if (state.role === 'pasante') items = items.filter(s => s.usuario === state.currentUser);
 
   if (!items.length) { showToast('No hay scoring diario cargado el ' + dia, true); return; }
@@ -1548,7 +1580,7 @@ document.querySelectorAll('#prueba-editor-overlay .hoja-toolbar button[data-cmd]
     else if (cmd === 'bold')   document.execCommand('bold');
     else if (cmd === 'item')   document.execCommand('insertUnorderedList');
     else if (cmd === 'clear') {
-      if (confirm('¿Vaciar todo el contenido de la hoja?')) body.innerHTML = '';
+      if (confirm('¿Vaciar todo el contenido del informe?')) body.innerHTML = '';
     }
   });
 });
@@ -1568,7 +1600,7 @@ document.getElementById('btn-guardar-prueba')?.addEventListener('click', async (
       await updateDoc(doc(db, COL_PRUEBAS, state.editandoPruebaId), {
         asunto, contenido, editado: true, fechaEdicion: new Date().toISOString(),
       });
-      showToast('✓ Nota actualizada');
+      showToast('✓ Informe actualizado');
     } else {
       const ahora = new Date();
       await addDoc(collection(db, COL_PRUEBAS), {
@@ -1576,7 +1608,7 @@ document.getElementById('btn-guardar-prueba')?.addEventListener('click', async (
         timestamp: ahora.getTime(), fecha: ahora.toISOString(),
         usuario: state.currentUser, rol: state.role,
       });
-      showToast('✓ Nota guardada');
+      showToast('✓ Informe guardado');
     }
     btn.disabled = false; btn.textContent = 'GUARDAR ✓';
     cerrarEditorPrueba();
@@ -1590,7 +1622,7 @@ window.confirmarEliminarPrueba = function(firestoreId) {
   const overlay = document.getElementById('confirm-overlay');
   const msg     = document.getElementById('confirm-msg');
   if (!overlay || !msg) return;
-  msg.textContent = '¿Eliminás esta nota? Esta acción no se puede deshacer.';
+  msg.textContent = '¿Eliminás este informe? Esta acción no se puede deshacer.';
   overlay.style.display = 'flex';
   document.getElementById('confirm-si').onclick = async () => {
     overlay.style.display = 'none';
@@ -1603,3 +1635,571 @@ window.confirmarEliminarPrueba = function(firestoreId) {
   };
   document.getElementById('confirm-no').onclick = () => { overlay.style.display = 'none'; };
 };
+
+
+/* ════════════════════════════════════════════════════════════
+   v1.14 — BOTONES SW (Sin alarma / OK / Observación, etc.)
+   Se usan en: alarmas de combustión (Horno), Análisis
+════════════════════════════════════════════════════════════ */
+document.querySelectorAll('.sw-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const grp = btn.dataset.grp;
+    document.querySelectorAll(`.sw-btn[data-grp="${grp}"]`).forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    const det = document.getElementById(`sw-detail-${grp}`);
+    if (det) det.style.display = btn.dataset.detalle ? 'block' : 'none';
+    if (det && !btn.dataset.detalle) {
+      const t = document.getElementById(`sw-obs-${grp}`);
+      if (t) t.value = '';
+    }
+  });
+});
+
+function swLeer(grp) {
+  const b = document.querySelector(`.sw-btn.selected[data-grp="${grp}"]`);
+  if (!b) return { estado: '', obs: '' };
+  return { estado: b.dataset.v, obs: b.dataset.detalle ? leerCampo(`sw-obs-${grp}`) : '' };
+}
+
+function swSet(grp, estado, obs) {
+  document.querySelectorAll(`.sw-btn[data-grp="${grp}"]`).forEach(b => {
+    b.classList.toggle('selected', !!estado && b.dataset.v === estado);
+  });
+  const conDetalle = !!document.querySelector(`.sw-btn.selected[data-grp="${grp}"][data-detalle]`);
+  const det = document.getElementById(`sw-detail-${grp}`);
+  const t   = document.getElementById(`sw-obs-${grp}`);
+  if (det) det.style.display = conDetalle ? 'block' : 'none';
+  if (t)   t.value = conDetalle ? (obs || '') : '';
+}
+
+function swLimpiarEn(selector) {
+  document.querySelectorAll(`${selector} .sw-btn.selected`).forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll(`${selector} .sw-detail`).forEach(d => { d.style.display = 'none'; });
+}
+
+/* ══ UTILS NUEVAS PESTAÑAS ══ */
+const COL_ANALISIS = 'calidad-analisis';
+
+// Medios de cultivo base. Los que se agregan con "Otro" se suman solos a la lista
+// (se toman de los análisis ya guardados).
+const MEDIOS_BASE = ['PCA (recuento total)', 'PDA (mohos y levaduras)'];
+
+state.analisis = [];
+state.unsubAna = null;
+let editAnalisisId = null;
+
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+function hoyISO() { return fechaLocalISO(new Date().toISOString()); }
+
+function fechaCorta(iso) {
+  return iso ? iso.split('-').reverse().join('/') : '—';
+}
+
+function irATab(tabId) {
+  document.querySelectorAll('#tabs-main .vis-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabId));
+  document.querySelectorAll('#screen-main .vis-tab-content').forEach(c => c.classList.toggle('active', c.id === tabId));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function rangoFechas(prefijo) {
+  return {
+    desde: document.getElementById(`${prefijo}-filtro-desde`)?.value || '',
+    hasta: document.getElementById(`${prefijo}-filtro-hasta`)?.value || '',
+  };
+}
+
+function modalCampo(label, val, cls = 'modal-campo-valor') {
+  return val ? `<div class="modal-campo"><div class="modal-campo-label">${esc(label)}</div><div class="${cls}">${esc(val)}</div></div>` : '';
+}
+function modalSeccion(titulo, campos) {
+  const c = campos.filter(Boolean).join('');
+  return c ? `<div class="modal-seccion"><div class="modal-seccion-title">${esc(titulo)}</div>${c}</div>` : '';
+}
+
+function confirmarEliminarGenerico(firestoreId, coleccion, texto) {
+  const overlay = document.getElementById('confirm-overlay');
+  const msg     = document.getElementById('confirm-msg');
+  if (!overlay || !msg) return;
+  msg.textContent = `¿Eliminás ${texto}? Esta acción no se puede deshacer.`;
+  overlay.style.display = 'flex';
+  document.getElementById('confirm-si').onclick = async () => {
+    overlay.style.display = 'none';
+    try {
+      await deleteDoc(doc(db, coleccion, firestoreId));
+      showToast('✓ Eliminado correctamente');
+    } catch (e) {
+      showToast('Error al eliminar: ' + e.message, true);
+    }
+  };
+  document.getElementById('confirm-no').onclick = () => { overlay.style.display = 'none'; };
+}
+
+function descargarHojas(hojas, nombreArchivo) {
+  const wb = XLSX.utils.book_new();
+  Object.entries(hojas).forEach(([nombre, rows]) => {
+    const ws = XLSX.utils.json_to_sheet(rows);
+    autoCol(ws, rows);
+    XLSX.utils.book_append_sheet(wb, ws, nombre);
+  });
+  XLSX.writeFile(wb, `${nombreArchivo}-${hoyISO()}.xlsx`);
+  showToast('✓ Excel descargado');
+}
+
+/* ══ FIRESTORE ══ */
+function suscribirAnalisis() {
+  const q = query(collection(db, COL_ANALISIS), orderBy('timestamp', 'desc'));
+  state.unsubAna = onSnapshot(q, snap => {
+    state.analisis = snap.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
+    refrescarVistas();
+  }, err => showToast(msgErrFirestore(err, COL_ANALISIS), true));
+}
+
+function resetNuevasPestanas() {
+  if (state.unsubAna) state.unsubAna();
+  state.analisis = [];
+  state.unsubAna = null;
+  limpiarAnalisis();
+}
+
+/* Al entrar a las pestañas: fecha de hoy y responsable por defecto */
+document.querySelector('#tabs-main .vis-tab[data-tab="tab-analisis"]')?.addEventListener('click', () => {
+  if (editAnalisisId) return;
+  if (!leerCampo('an-fecha-toma')) document.getElementById('an-fecha-toma').value = hoyISO();
+  renderMediosSelect();
+});
+
+/* ════════════════════════════════════════════════════════════
+   ANÁLISIS — placas ambientales e hisopados
+════════════════════════════════════════════════════════════ */
+function mediosDisponibles() {
+  const base = new Map(MEDIOS_BASE.map(m => [m.toLowerCase(), m]));
+  const extra = new Map();
+  state.analisis.forEach(a => {
+    const m = (a.medio || '').trim();
+    if (m && !base.has(m.toLowerCase()) && !extra.has(m.toLowerCase())) extra.set(m.toLowerCase(), m);
+  });
+  return [...MEDIOS_BASE, ...[...extra.values()].sort((a, b) => a.localeCompare(b, 'es'))];
+}
+
+function renderMediosSelect() {
+  const sel = document.getElementById('an-medio');
+  if (!sel) return;
+  const actual = sel.value;
+  sel.innerHTML = '<option value="">Seleccionar medio...</option>'
+    + mediosDisponibles().map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('')
+    + '<option value="__otro__">➕ Otro (agregar nuevo)...</option>';
+  sel.value = [...sel.options].some(o => o.value === actual) ? actual : '';
+}
+
+function actualizarCamposAnalisis() {
+  const esPlaca = swLeer('an-tipo').estado === 'Placa ambiental';
+  const wrap = document.getElementById('an-exposicion-wrap');
+  if (wrap) wrap.style.display = esPlaca ? 'block' : 'none';
+  if (!esPlaca) { const e = document.getElementById('an-exposicion'); if (e) e.value = ''; }
+  const otro = document.getElementById('an-medio')?.value === '__otro__';
+  const otroWrap = document.getElementById('an-medio-otro-wrap');
+  if (otroWrap) otroWrap.style.display = otro ? 'block' : 'none';
+}
+
+document.querySelectorAll('.sw-btn[data-grp="an-tipo"]').forEach(b => b.addEventListener('click', actualizarCamposAnalisis));
+document.getElementById('an-medio')?.addEventListener('change', actualizarCamposAnalisis);
+renderMediosSelect();
+
+function leerAnalisis() {
+  const sel = leerCampo('an-medio');
+  let medio = sel === '__otro__' ? leerCampo('an-medio-otro') : sel;
+  if (sel === '__otro__' && medio) {
+    const existente = mediosDisponibles().find(m => m.toLowerCase() === medio.toLowerCase());
+    if (existente) medio = existente;
+  }
+  const tipo = swLeer('an-tipo').estado;
+  return {
+    tipo_muestra:   tipo,
+    fecha_toma:     leerCampo('an-fecha-toma'),
+    punto:          leerCampo('an-punto'),
+    medio,
+    exposicion_min: tipo === 'Placa ambiental' ? leerCampo('an-exposicion') : '',
+    fecha_lectura:  leerCampo('an-fecha-lectura'),
+    recuento:       leerCampo('an-recuento'),
+    conformidad:    swLeer('an-conf').estado,
+    obs:            leerCampo('an-obs'),
+  };
+}
+
+function limpiarAnalisis() {
+  document.querySelectorAll('#analisis-form input, #analisis-form textarea').forEach(el => { el.value = ''; });
+  swLimpiarEn('#analisis-form');
+  const sel = document.getElementById('an-medio');
+  if (sel) sel.value = '';
+  editAnalisisId = null;
+  actualizarCamposAnalisis();
+  const btn = document.getElementById('btn-guardar-analisis');
+  if (btn) { btn.disabled = false; btn.textContent = 'GUARDAR ANÁLISIS ✓'; }
+  const can = document.getElementById('btn-cancelar-analisis');
+  if (can) can.style.display = 'none';
+  const f = document.getElementById('an-fecha-toma');
+  if (f && state.role) f.value = hoyISO();
+}
+
+document.getElementById('btn-cancelar-analisis')?.addEventListener('click', limpiarAnalisis);
+
+document.getElementById('btn-guardar-analisis')?.addEventListener('click', async () => {
+  const d = leerAnalisis();
+  if (!d.tipo_muestra) { showToast('Elegí placa ambiental o hisopado', true); return; }
+  if (!d.fecha_toma)   { showToast('Indicá la fecha de toma', true); return; }
+  if (!d.medio)        { showToast(leerCampo('an-medio') === '__otro__' ? 'Escribí el nombre del nuevo medio' : 'Seleccioná el medio de cultivo', true); return; }
+
+  const btn = document.getElementById('btn-guardar-analisis');
+  btn.disabled = true; btn.textContent = 'GUARDANDO...';
+  try {
+    const ahora = new Date();
+    if (editAnalisisId) {
+      await updateDoc(doc(db, COL_ANALISIS, editAnalisisId), { ...d, editado: true, fechaEdicion: ahora.toISOString() });
+      showToast('✓ Análisis actualizado correctamente');
+    } else {
+      await addDoc(collection(db, COL_ANALISIS), {
+        timestamp: ahora.getTime(), fecha: ahora.toISOString(),
+        usuario: state.currentUser, rol: state.role, tipo: 'analisis', ...d,
+      });
+      showToast('✓ Análisis guardado correctamente');
+    }
+    limpiarAnalisis();
+  } catch (e) {
+    showToast(msgErrFirestore(e, COL_ANALISIS), true);
+    btn.disabled = false;
+    btn.textContent = editAnalisisId ? 'ACTUALIZAR ANÁLISIS ✓' : 'GUARDAR ANÁLISIS ✓';
+  }
+});
+
+function itemsAnalisis() {
+  const f = rangoFechas('analisis');
+  let items = state.analisis.filter(a => (!f.desde || (a.fecha_toma || '') >= f.desde) && (!f.hasta || (a.fecha_toma || '') <= f.hasta));
+  if (state.role === 'pasante') items = items.filter(a => a.usuario === state.currentUser);
+  return items;
+}
+
+function buildAnalisisCard(a, showCrud) {
+  const crud = (showCrud && canCRUD()) ? `
+    <div class="crud-btns" onclick="event.stopPropagation()">
+      <button class="crud-btn edit" onclick="editarAnalisis('${a.firestoreId}')">✏️ Editar</button>
+      <button class="crud-btn del"  onclick="eliminarAnalisis('${a.firestoreId}')">🗑️ Eliminar</button>
+    </div>` : '';
+  const editTag = a.editado ? `<span class="badge-editado">editado</span>` : '';
+  let estado = '<span class="badge-pend">PENDIENTE DE LECTURA</span>';
+  if (a.conformidad === 'Conforme')    estado = '<span class="badge-cat">CONFORME</span>';
+  if (a.conformidad === 'No conforme') estado = '<span class="badge-nc">NO CONFORME</span>';
+  return `
+    <div class="registro-card analisis-card" onclick="verAnalisis('${a.firestoreId}')">
+      <div class="registro-header">
+        <div class="registro-titulo">${esc(a.tipo_muestra)} ${editTag}</div>
+        ${estado}
+      </div>
+      <div class="registro-meta">${fechaCorta(a.fecha_toma)} · ${esc(a.medio)}${a.punto ? ' · ' + esc(a.punto) : ''} · ${esc(a.usuario)}</div>
+      ${crud}
+    </div>`;
+}
+
+function renderAnalisis() {
+  renderMediosSelect();
+  const list = document.getElementById('analisis-list');
+  if (list) {
+    const items = itemsAnalisis();
+    list.innerHTML = items.length ? items.map(a => buildAnalisisCard(a, true)).join('') : emptyMsg();
+  }
+  const vis = document.getElementById('vis-analisis-list');
+  if (vis) vis.innerHTML = state.analisis.length ? state.analisis.map(a => buildAnalisisCard(a, false)).join('') : emptyMsg();
+}
+
+['analisis-filtro-desde', 'analisis-filtro-hasta'].forEach(id => document.getElementById(id)?.addEventListener('change', renderAnalisis));
+document.getElementById('btn-analisis-limpiar')?.addEventListener('click', () => {
+  ['analisis-filtro-desde', 'analisis-filtro-hasta'].forEach(id => { document.getElementById(id).value = ''; });
+  renderAnalisis();
+});
+
+window.eliminarAnalisis = id => confirmarEliminarGenerico(id, COL_ANALISIS, 'este análisis');
+
+window.editarAnalisis = function(firestoreId) {
+  const a = state.analisis.find(x => x.firestoreId === firestoreId);
+  if (!a) return;
+  irATab('tab-analisis');
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+  swSet('an-tipo', a.tipo_muestra, '');
+  swSet('an-conf', a.conformidad, '');
+  set('an-fecha-toma', a.fecha_toma);
+  set('an-punto', a.punto);
+  set('an-exposicion', a.exposicion_min);
+  set('an-fecha-lectura', a.fecha_lectura);
+  set('an-recuento', a.recuento);
+  set('an-obs', a.obs);
+  renderMediosSelect();
+  const sel = document.getElementById('an-medio');
+  if ([...sel.options].some(o => o.value === a.medio)) {
+    sel.value = a.medio;
+    set('an-medio-otro', '');
+  } else {
+    sel.value = '__otro__';
+    set('an-medio-otro', a.medio);
+  }
+  actualizarCamposAnalisis();
+  editAnalisisId = firestoreId;
+  document.getElementById('btn-guardar-analisis').textContent = 'ACTUALIZAR ANÁLISIS ✓';
+  document.getElementById('btn-cancelar-analisis').style.display = 'block';
+  showToast('Editando análisis — modificá y guardá');
+};
+
+window.verAnalisis = function(firestoreId) {
+  const a = state.analisis.find(x => x.firestoreId === firestoreId);
+  if (!a) return;
+  document.getElementById('modal-titulo').textContent = `Análisis — ${a.tipo_muestra}`;
+  document.getElementById('modal-meta').textContent =
+    `${fechaCorta(a.fecha_toma)} · ${a.usuario} · ${formatFecha(a.fecha)}${a.editado ? ' · (editado)' : ''}`;
+  const confCls = a.conformidad === 'Conforme' ? 'modal-campo-valor ok-t' : 'modal-campo-valor danger';
+  document.getElementById('modal-body').innerHTML = [
+    modalSeccion('Muestra', [
+      modalCampo('Tipo', a.tipo_muestra),
+      modalCampo('Fecha de toma', fechaCorta(a.fecha_toma)),
+      modalCampo('Punto de muestreo', a.punto),
+      modalCampo('Medio de cultivo', a.medio),
+      modalCampo('Exposición', a.exposicion_min ? a.exposicion_min + ' min' : ''),
+    ]),
+    modalSeccion('Lectura', [
+      modalCampo('Fecha de lectura', a.fecha_lectura ? fechaCorta(a.fecha_lectura) : ''),
+      modalCampo('Recuento (UFC)', a.recuento),
+      modalCampo('Resultado', a.conformidad, confCls),
+      modalCampo('Observaciones', a.obs),
+    ]),
+  ].join('');
+  document.getElementById('modal-overlay').style.display = 'flex';
+};
+
+document.getElementById('btn-analisis-excel')?.addEventListener('click', () => {
+  const items = itemsAnalisis();
+  if (!items.length) { showToast('No hay análisis para exportar', true); return; }
+  const rows = items.map(a => ({
+    'Fecha de toma':     fechaCorta(a.fecha_toma),
+    'Tipo de muestra':   a.tipo_muestra || '',
+    'Punto de muestreo': a.punto || '',
+    'Medio de cultivo':  a.medio || '',
+    'Exposición (min)':  a.exposicion_min || '',
+    'Fecha de lectura':  a.fecha_lectura ? fechaCorta(a.fecha_lectura) : '',
+    'Recuento (UFC)':    a.recuento || '',
+    'Resultado':         a.conformidad || '',
+    'Observaciones':     a.obs || '',
+    'Cargado por':       a.usuario || '',
+    'Fecha de carga':    a.fecha ? new Date(a.fecha).toLocaleString('es-AR') : '',
+  }));
+  descargarHojas({ 'Análisis': rows }, 'romero-analisis');
+});
+
+
+/* ══ v1.15 — Filtro por categoría / producto en Historial de Scoring ══ */
+function poblarFiltroProductos() {
+  const cat = document.getElementById('filtro-categoria')?.value || '';
+  const sel = document.getElementById('filtro-producto');
+  if (!sel) return;
+  const lista = cat === 'bolleria' ? PRODUCTOS_BOLLERIA
+              : cat === 'molde'    ? PRODUCTOS_MOLDE
+              : [...PRODUCTOS_BOLLERIA, ...PRODUCTOS_MOLDE];
+  const actual = sel.value;
+  sel.innerHTML = '<option value="">Todos</option>' + lista.map(p => `<option value="${p}">${p}</option>`).join('');
+  sel.value = lista.includes(actual) ? actual : '';
+}
+
+function filtrarScoringProd(items) {
+  const cat  = document.getElementById('filtro-categoria')?.value || '';
+  const prod = document.getElementById('filtro-producto')?.value || '';
+  return items.filter(s => (!cat || s.categoria === cat) && (!prod || s.producto === prod));
+}
+
+document.getElementById('filtro-categoria')?.addEventListener('change', () => { poblarFiltroProductos(); renderHistorial(); });
+document.getElementById('filtro-producto')?.addEventListener('change', renderHistorial);
+poblarFiltroProductos();
+
+
+function msgErrFirestore(e, coleccion) {
+  if (e && (e.code === 'permission-denied' || /permission/i.test(e.message || '')))
+    return `Sin permiso en Firestore: habilitá la colección "${coleccion}" en las reglas`;
+  return 'Error: ' + (e?.message || e);
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   v1.16 — ESTADÍSTICAS (Chart.js)
+════════════════════════════════════════════════════════════ */
+const STATS_COL = { accent:'#378add', green:'#4caf50', amber:'#c8860a', red:'#e8452c', muted:'#6a8faf', grid:'#2e4a66' };
+const statsCharts = {};
+
+function numTemp(v) {
+  const n = parseFloat(String(v ?? '').replace(',', '.'));
+  return isNaN(n) ? null : n;
+}
+
+function statsHTML(p) {
+  const wrap = (k, titulo) => `
+    <div class="card">
+      <div class="card-title">${titulo}</div>
+      <div id="${p}-wrap-${k}">
+        <div class="chart-wrap"><canvas id="${p}-cv-${k}"></canvas></div>
+        <div class="empty-msg chart-empty" style="display:none">Sin datos para el período elegido.</div>
+      </div>
+    </div>`;
+  return `
+    <div class="card">
+      <div class="card-title">Filtros</div>
+      <div class="filtros-grid">
+        <div class="field mb-0"><label>Fecha desde</label><input type="date" id="${p}-desde"></div>
+        <div class="field mb-0"><label>Fecha hasta</label><input type="date" id="${p}-hasta"></div>
+        <div class="field mb-0"><label>Categoría (scoring)</label>
+          <select id="${p}-cat"><option value="">Todas</option><option value="bolleria">Bollería</option><option value="molde">Pan de molde</option></select></div>
+        <div class="field mb-0"><label>Producto (scoring)</label>
+          <select id="${p}-prod"><option value="">Todos</option></select></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn btn-sm btn-outline" id="${p}-btn-30" style="flex:1">ÚLTIMOS 30 DÍAS</button>
+        <button class="btn btn-sm btn-outline" id="${p}-btn-todo" style="flex:1">TODO</button>
+      </div>
+    </div>
+    <div class="kpi-grid" id="${p}-kpis"></div>
+    ${wrap('prod', 'Puntaje promedio por producto')}
+    ${wrap('dia', 'Evolución del puntaje promedio')}
+    ${wrap('horno', 'Temperaturas del horno')}
+    ${wrap('ana', 'Análisis — resultados')}`;
+}
+
+function statsProductos(p) {
+  const cat = document.getElementById(`${p}-cat`).value;
+  const lista = cat === 'bolleria' ? PRODUCTOS_BOLLERIA : cat === 'molde' ? PRODUCTOS_MOLDE : [...PRODUCTOS_BOLLERIA, ...PRODUCTOS_MOLDE];
+  const sel = document.getElementById(`${p}-prod`);
+  const actual = sel.value;
+  sel.innerHTML = '<option value="">Todos</option>' + lista.map(x => `<option value="${x}">${x}</option>`).join('');
+  sel.value = lista.includes(actual) ? actual : '';
+}
+
+function statsUltimos30(p) {
+  const d = new Date(); d.setDate(d.getDate() - 29);
+  document.getElementById(`${p}-desde`).value = fechaLocalISO(d.toISOString());
+  document.getElementById(`${p}-hasta`).value = '';
+}
+
+function initStats(p) {
+  const root = document.getElementById(`${p}-root`);
+  if (!root || root.firstChild) return;
+  root.innerHTML = statsHTML(p);
+  statsProductos(p);
+  statsUltimos30(p);
+  document.getElementById(`${p}-cat`).addEventListener('change', () => { statsProductos(p); renderStats(p); });
+  ['desde', 'hasta', 'prod'].forEach(k => document.getElementById(`${p}-${k}`).addEventListener('change', () => renderStats(p)));
+  document.getElementById(`${p}-btn-30`).addEventListener('click', () => { statsUltimos30(p); renderStats(p); });
+  document.getElementById(`${p}-btn-todo`).addEventListener('click', () => {
+    document.getElementById(`${p}-desde`).value = ''; document.getElementById(`${p}-hasta`).value = ''; renderStats(p);
+  });
+}
+
+function drawChart(p, k, cfg, hayDatos) {
+  const key = p + k;
+  if (statsCharts[key]) { statsCharts[key].destroy(); delete statsCharts[key]; }
+  const wrap = document.getElementById(`${p}-wrap-${k}`);
+  if (!wrap) return;
+  wrap.querySelector('.chart-wrap').style.display = hayDatos ? '' : 'none';
+  wrap.querySelector('.chart-empty').style.display = hayDatos ? 'none' : 'block';
+  if (!hayDatos || typeof Chart === 'undefined') return;
+  statsCharts[key] = new Chart(document.getElementById(`${p}-cv-${k}`), cfg);
+}
+
+function chartOpts(extra = {}, conEjes = true) {
+  const o = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: STATS_COL.muted, font: { family: 'DM Mono', size: 11 } } } },
+    ...extra,
+  };
+  if (conEjes) {
+    const eje = { ticks: { color: STATS_COL.muted, font: { family: 'DM Mono', size: 10 } }, grid: { color: STATS_COL.grid } };
+    o.scales = { x: { ...eje, ...(extra.scales?.x || {}) }, y: { ...eje, ...(extra.scales?.y || {}) } };
+  }
+  return o;
+}
+
+function promedio(arr) { return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null; }
+const r1 = n => n === null ? null : Math.round(n * 10) / 10;
+
+function renderStats(p) {
+  const root = document.getElementById(`${p}-root`);
+  if (!root || !root.firstChild) return;
+  const v = k => document.getElementById(`${p}-${k}`).value;
+  const desde = v('desde'), hasta = v('hasta'), cat = v('cat'), prod = v('prod');
+  const enRango = d => !!d && (!desde || d >= desde) && (!hasta || d <= hasta);
+  const propio = x => state.role !== 'pasante' || x.usuario === state.currentUser;
+
+  const regs   = state.registros.filter(r => propio(r) && r.fecha && enRango(fechaLocalISO(r.fecha)));
+  const scs    = state.scorings.filter(s => propio(s) && s.fecha && enRango(fechaLocalISO(s.fecha)) && (!cat || s.categoria === cat) && (!prod || s.producto === prod));
+  const anas   = state.analisis.filter(x => propio(x) && enRango(x.fecha_toma));
+
+  const puntuados = scs.map(s => ({ s, pt: calcularPuntaje(s) })).filter(x => x.pt !== '');
+  const ptoProm = r1(promedio(puntuados.map(x => x.pt)));
+  const leidos = anas.filter(a => a.conformidad);
+  const conf = leidos.filter(a => a.conformidad === 'Conforme').length;
+  const alarmas = regs.reduce((n, r) => n + (r.horno?.alarma_z1 === 'Con alarma' ? 1 : 0) + (r.horno?.alarma_z2 === 'Con alarma' ? 1 : 0), 0);
+
+  const kpi = (val, label) => `<div class="kpi"><div class="kpi-val">${val}</div><div class="kpi-label">${label}</div></div>`;
+  document.getElementById(`${p}-kpis`).innerHTML = [
+    kpi(scs.length, 'Scorings'),
+    kpi(ptoProm === null ? '—' : ptoProm, 'Puntaje promedio'),
+    kpi(regs.length, 'Registros'),
+    kpi(anas.length, 'Análisis'),
+    kpi(leidos.length ? Math.round(conf / leidos.length * 100) + '%' : '—', 'Análisis conformes'),
+    kpi(alarmas, 'Alarmas combustión'),
+  ].join('');
+
+  // 1) Puntaje por producto
+  const porProd = {};
+  puntuados.forEach(x => { (porProd[x.s.producto || '—'] ||= []).push(x.pt); });
+  const prodLabels = Object.keys(porProd).sort();
+  drawChart(p, 'prod', {
+    type: 'bar',
+    data: { labels: prodLabels, datasets: [{ label: 'Puntaje promedio', data: prodLabels.map(k => r1(promedio(porProd[k]))), backgroundColor: STATS_COL.accent, borderRadius: 6 }] },
+    options: chartOpts({ scales: { y: { beginAtZero: true } } }),
+  }, prodLabels.length > 0);
+
+  // 2) Evolución por día
+  const porDia = {};
+  puntuados.forEach(x => { (porDia[fechaLocalISO(x.s.fecha)] ||= []).push(x.pt); });
+  const dias = Object.keys(porDia).sort();
+  drawChart(p, 'dia', {
+    type: 'line',
+    data: { labels: dias.map(fechaCorta), datasets: [{ label: 'Puntaje promedio', data: dias.map(d => r1(promedio(porDia[d]))), borderColor: STATS_COL.green, backgroundColor: 'rgba(76,175,80,.15)', fill: true, tension: .25, pointRadius: 3 }] },
+    options: chartOpts({ scales: { y: { beginAtZero: true } } }),
+  }, dias.length > 0);
+
+  // 3) Temperaturas del horno
+  const ord = [...regs].sort((a, b) => a.timestamp - b.timestamp);
+  const labels = ord.map(r => new Date(r.fecha).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }));
+  const series = [
+    ['Zona 1', r => numTemp(r.horno?.z1), STATS_COL.accent],
+    ['Zona 2', r => numTemp(r.horno?.z2), STATS_COL.green],
+    ['Combustión Z1', r => numTemp(r.horno?.comb_z1), STATS_COL.amber],
+    ['Combustión Z2', r => numTemp(r.horno?.comb_z2), STATS_COL.red],
+  ].map(([label, fn, color]) => ({ label, data: ord.map(fn), borderColor: color, backgroundColor: color, tension: .25, pointRadius: 3, spanGaps: true }))
+   .filter(d => d.data.some(x => x !== null));
+  drawChart(p, 'horno', { type: 'line', data: { labels, datasets: series }, options: chartOpts() }, series.length > 0);
+
+  // 4) Análisis
+  const nConf = conf, nNo = leidos.length - conf, nPend = anas.length - leidos.length;
+  drawChart(p, 'ana', {
+    type: 'doughnut',
+    data: { labels: ['Conforme', 'No conforme', 'Pendiente de lectura'], datasets: [{ data: [nConf, nNo, nPend], backgroundColor: [STATS_COL.green, STATS_COL.red, STATS_COL.amber], borderColor: '#1b2d42' }] },
+    options: chartOpts({}, false),
+  }, anas.length > 0);
+}
+
+function renderStatsVisibles() {
+  ['st', 'vst'].forEach(p => {
+    const root = document.getElementById(`${p}-root`);
+    if (root && root.closest('.vis-tab-content')?.classList.contains('active')) renderStats(p);
+  });
+}
+
+document.querySelector('#tabs-main .vis-tab[data-tab="tab-stats"]')?.addEventListener('click', () => { initStats('st'); renderStats('st'); });
+document.querySelector('#screen-vis .vis-tab[data-tab="tab-vis-stats"]')?.addEventListener('click', () => { initStats('vst'); renderStats('vst'); });
