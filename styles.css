@@ -553,3 +553,57 @@ header {
 /* ══ PUNTAJE TOTAL EN TARJETA DE SCORING (Historial) ══ */
 .puntaje-total-row { margin-top:8px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 1.5px; color: var(--muted); display:flex; align-items:center; gap:8px; }
 .puntaje-total-row strong { font-family: var(--font-head); font-size: 18px; letter-spacing: 1px; color: var(--accent); }
+
+
+/* ══ v1.14 — Parte diario, Análisis y alarmas de combustión ══ */
+.sw-row { display: flex; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+.sw-btn {
+  flex: 1; min-width: 90px; padding: 10px 6px; text-align: center; cursor: pointer;
+  font-size: 12px; font-weight: 700; font-family: var(--font-mono);
+  border: 2px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface2); color: var(--muted); letter-spacing: 0.5px; transition: all .15s; user-select: none;
+}
+.sw-btn:hover:not(.selected) { border-color: var(--muted); color: var(--text); }
+.sw-btn.selected          { border-color: var(--accent); background: rgba(55,138,221,.14); color: var(--accent); box-shadow: var(--shadow-glow-accent); }
+.sw-btn.ok-btn.selected   { border-color: var(--green);  background: rgba(76,175,80,.14);  color: var(--green);  box-shadow: var(--shadow-glow-green); }
+.sw-btn.obs-btn.selected  { border-color: var(--amber);  background: rgba(200,134,10,.14); color: var(--amber);  box-shadow: var(--shadow-glow-amber); }
+.sw-btn.nc-btn.selected   { border-color: var(--accent2); background: rgba(232,69,44,.14); color: var(--accent2); box-shadow: 0 0 0 1px rgba(232,69,44,.25), 0 6px 20px rgba(232,69,44,.16); }
+.sw-detail { margin-top: 6px; }
+.analisis-card { border-left-color: var(--muted); }
+.badge-nc   { display: inline-block; padding: 2px 9px; border-radius: 20px; font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: 1px; background: rgba(232,69,44,.15); color: var(--accent2); }
+.badge-pend { display: inline-block; padding: 2px 9px; border-radius: 20px; font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: 1px; background: rgba(200,134,10,.15); color: var(--amber); }
+
+
+/* ══ v1.16 — Estadísticas ══ */
+.kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+.kpi { background: linear-gradient(180deg, var(--surface), #1a2c40); border: 1px solid rgba(255,255,255,.05); border-radius: var(--radius-md); padding: 14px 16px; box-shadow: var(--shadow-soft); }
+.kpi-val { font-family: var(--font-head); font-size: 32px; letter-spacing: 1px; color: var(--accent); line-height: 1.1; }
+.kpi-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+.chart-wrap { position: relative; height: 260px; }
+.chart-empty { padding: 28px 16px; }
+@media (min-width: 640px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+
+/* ══ v1.18 — Fix calendarios (date/time) en iOS Safari ══ */
+:root { color-scheme: dark; }
+/* iOS hace zoom al enfocar inputs con fuente < 16px */
+input[type="text"], input[type="password"], input[type="date"], input[type="time"], input[type="number"], select, textarea { font-size: 16px; }
+input[type="date"], input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-width: 0;            /* evita que se desborde en grillas / flex */
+  max-width: 100%;
+  min-height: 46px;        /* Safari colapsa el alto cuando está vacío */
+  line-height: normal;
+  text-align: left;
+  -webkit-text-fill-color: var(--text);
+  background-clip: padding-box;
+}
+input[type="date"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value { text-align: left; min-height: 1.3em; margin: 0; }
+input[type="date"]::-webkit-datetime-edit,
+input[type="time"]::-webkit-datetime-edit { padding: 0; }
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator { opacity: .7; cursor: pointer; }
+.form-grid .field, .filtros-grid .field { min-width: 0; }
