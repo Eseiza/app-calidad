@@ -627,6 +627,15 @@
       <div class="section-title" style="margin:0">INFORMES</div>
       <button class="btn btn-sm btn-green" id="btn-nueva-prueba" style="width:auto">✚ NUEVO</button>
     </div>
+    <div class="field" id="informes-filtro-wrap">
+      <label>Autor</label>
+      <select id="informes-filtro-rol">
+        <option value="">Todos</option>
+        <option value="calidad">Calidad</option>
+        <option value="pasante">Pasante</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
     <div id="pruebas-list"></div>
   </div>
 
@@ -658,7 +667,7 @@
           </div>
           <div class="field full" id="an-medio-otro-wrap" style="display:none">
             <label>Nombre del nuevo medio</label>
-            <input type="text" id="an-medio-otro" placeholder="Ej: Agar Baird Parker">
+            <input type="text" id="an-medio-otro" placeholder="Ej: Agar...">
           </div>
         </div>
       </div>
