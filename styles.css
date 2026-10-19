@@ -502,8 +502,13 @@ header {
 .export-scoring-dia { margin-top:16px; padding-top:14px; border-top:1px solid var(--border, rgba(255,255,255,.1)); }
 
 /* ══ PRUEBAS DE PAN — hoja tipo mail ══ */
-.prueba-card { border-left-color: var(--amber); }
-.prueba-card:hover { box-shadow: var(--shadow-soft), var(--shadow-glow-amber); }
+.prueba-card { border-left-color: var(--accent); }
+.prueba-card.rol-calidad { border-left-color: var(--accent); }
+.prueba-card.rol-admin   { border-left-color: var(--amber); }
+.prueba-card.rol-pasante { border-left-color: #8a5fd8; background: linear-gradient(90deg, rgba(138,95,216,.08), transparent 40%), var(--surface); }
+.prueba-card:hover { box-shadow: var(--shadow-soft), var(--shadow-glow-accent); }
+.prueba-card.rol-pasante:hover { box-shadow: var(--shadow-soft), 0 0 0 1px rgba(138,95,216,.35), 0 6px 20px rgba(138,95,216,.18); }
+.prueba-card .role-tag { margin-left: 6px; vertical-align: middle; }
 .prueba-preview { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
 
 .hoja-wrap { width: 100%; max-width: 760px; margin: 0 auto; padding: 16px 4px 40px; }
