@@ -17,7 +17,7 @@ const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const COL_REG     = "calidad-romero";
 const COL_SCORING = "calidad-scoring";
-const COL_PRUEBAS = "calidad-pruebas"; // Pruebas de pan (no visible para pasante)
+const COL_PRUEBAS = "calidad-pruebas"; // Informes (los puede hacer calidad, admin y pasante)
 
 // ══ APPS SCRIPT URL — reemplazá con tu URL al publicar ══
 const APPS_SCRIPT_URL = ''; // ← pegá acá tu URL
@@ -197,13 +197,13 @@ function doLogin() {
       // Pasante puede ver historial pero solo sus propios registros
     }
     const tabPruebasBtn = document.getElementById('tab-btn-pruebas');
-    if (tabPruebasBtn) tabPruebasBtn.style.display = (state.role === 'pasante') ? 'none' : '';
+    if (tabPruebasBtn) tabPruebasBtn.style.display = '';
     actualizarFechas();
     setInterval(actualizarFechas, 60000);
   }
   suscribirRegistros();
   suscribirScoring();
-  if (state.role !== 'pasante') suscribirPruebas();
+  suscribirPruebas();
   suscribirAnalisis();
 }
 
@@ -1505,31 +1505,51 @@ document.getElementById('btn-exportar-scoring-dia')?.addEventListener('click', (
 
 
 /* ══════════════════════════════════════
-   PRUEBAS DE PAN (estilo hoja / mail)
-   No visible para el rol "pasante"
+   INFORMES (estilo hoja / mail)
+   Los hacen calidad, admin y pasante. El pasante ve y edita solo los suyos.
 ══════════════════════════════════════ */
 function renderPruebas() {
   const list = document.getElementById('pruebas-list');
   if (!list) return;
-  const items = state.pruebas;
+  const esPasante = state.role === 'pasante';
+  const wrapFiltro = document.getElementById('informes-filtro-wrap');
+  if (wrapFiltro) wrapFiltro.style.display = esPasante ? 'none' : '';
+  const rolFiltro = document.getElementById('informes-filtro-rol')?.value || '';
+  let items = state.pruebas;
+  if (esPasante) items = items.filter(p => p.usuario === state.currentUser);
+  else if (rolFiltro) items = items.filter(p => rolDeInforme(p) === rolFiltro);
   list.innerHTML = items.length ? items.map(buildPruebaCard).join('') : emptyMsg();
 }
 
+// Rol de quien hizo el informe (los informes viejos no guardaban el rol: se busca por nombre de usuario)
+function rolDeInforme(p) {
+  if (p.rol) return p.rol;
+  const u = Object.values(USERS).find(x => x.nombre === p.usuario);
+  return u ? u.role : 'calidad';
+}
+
+document.getElementById('informes-filtro-rol')?.addEventListener('change', renderPruebas);
+
 function buildPruebaCard(p) {
+  const rol = rolDeInforme(p);
+  const rolLabel = { admin: 'ADMIN', calidad: 'CALIDAD', pasante: 'PASANTE' }[rol] || rol.toUpperCase();
+  const puedeEditar = state.role !== 'pasante' || p.usuario === state.currentUser;
+  const crudHtml = puedeEditar ? `
+      <div class="crud-btns" onclick="event.stopPropagation()">
+        <button class="crud-btn edit" onclick="abrirEditorPrueba('${p.firestoreId}')">✏️ Editar</button>
+        <button class="crud-btn del"  onclick="confirmarEliminarPrueba('${p.firestoreId}')">🗑️ Eliminar</button>
+      </div>` : '';
   const editTag = p.editado ? `<span class="badge-editado">editado</span>` : '';
   const textoPlano = (p.contenido || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   const preview = textoPlano.slice(0, 140);
   return `
-    <div class="registro-card prueba-card" onclick="abrirEditorPrueba('${p.firestoreId}')">
+    <div class="registro-card prueba-card rol-${rol}" onclick="abrirEditorPrueba('${p.firestoreId}')">
       <div class="registro-header">
-        <div class="registro-titulo">${p.asunto || '(Sin asunto)'} ${editTag}</div>
+        <div class="registro-titulo">${p.asunto || '(Sin asunto)'} ${editTag} <span class="role-tag ${rol}">${rolLabel}</span></div>
       </div>
       <div class="registro-meta">${formatFecha(p.fecha)} · ${p.usuario}</div>
       ${preview ? `<div class="prueba-preview">${preview}${textoPlano.length > 140 ? '…' : ''}</div>` : ''}
-      <div class="crud-btns" onclick="event.stopPropagation()">
-        <button class="crud-btn edit" onclick="abrirEditorPrueba('${p.firestoreId}')">✏️ Editar</button>
-        <button class="crud-btn del"  onclick="confirmarEliminarPrueba('${p.firestoreId}')">🗑️ Eliminar</button>
-      </div>
+      ${crudHtml}
     </div>`;
 }
 
@@ -1544,6 +1564,7 @@ window.abrirEditorPrueba = function(firestoreId) {
   if (firestoreId) {
     const p = state.pruebas.find(x => x.firestoreId === firestoreId);
     if (!p) return;
+    if (state.role === 'pasante' && p.usuario !== state.currentUser) return;
     asunto.value = p.asunto || '';
     body.innerHTML = p.contenido || '';
     meta.textContent = `${p.usuario} · ${formatFecha(p.fecha)}${p.editado ? ' · (editado)' : ''}`;
@@ -1682,7 +1703,7 @@ const COL_ANALISIS = 'calidad-analisis';
 
 // Medios de cultivo base. Los que se agregan con "Otro" se suman solos a la lista
 // (se toman de los análisis ya guardados).
-const MEDIOS_BASE = ['PCA (recuento total)', 'PDA (mohos y levaduras)'];
+const MEDIOS_BASE = ['PCA', 'Cloranfenicol Glucosa'];
 
 state.analisis = [];
 state.unsubAna = null;
