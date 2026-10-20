@@ -32,7 +32,8 @@ const USERS = {
   "pasanteM":  { password: "Pasante.2026",  role: "pasante",      nombre: "Pasante TM" },
   "pasanteT":  { password: "Pasante.2026",  role: "pasante",      nombre: "Pasante TT" },
   "admin":     { password: "cin>>Eszenay7;",    role: "admin",        nombre: "Administrador" },
-  "Romero":    { password: "Romero.2026",   role: "visualizador", nombre: "Romero" },
+  "Romero":    { password: "Nicolas.2026",   role: "visualizador", nombre: "Romero" },
+  "Romero":    { password: "Nahuel.2026",   role: "visualizador", nombre: "Romero" },
 };
 
 /* ══ PRODUCTOS SCORING ══ */
