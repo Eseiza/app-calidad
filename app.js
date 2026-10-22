@@ -32,7 +32,7 @@ const USERS = {
   "pasanteM":  { password: "Pasante.2026",  role: "pasante",      nombre: "Pasante TM" },
   "pasanteT":  { password: "Pasante.2026",  role: "pasante",      nombre: "Pasante TT" },
   "admin":     { password: "cin>>Eszenay7;",    role: "admin",        nombre: "Administrador" },
-  "Romero":    { password: "Romero.1124",   role: "visualizador", nombre: "Romero" },
+  "Romero":    { password: "Romero.2026",   role: "visualizador", nombre: "Romero" },
 };
 
 /* ══ PRODUCTOS SCORING ══ */
@@ -96,6 +96,14 @@ function formatFecha(iso) {
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit'
   });
+}
+
+// Alarma cámara de combustión: ahora es un valor de temperatura.
+// Registros viejos guardaban 'Sin alarma' / 'Con alarma': se ignoran para no mostrarlos como temperatura.
+function valorAlarma(v) {
+  if (v === undefined || v === null) return '';
+  const t = String(v).trim();
+  return /^(sin|con) alarma$/i.test(t) ? '' : t;
 }
 
 function leerCampo(id) {
@@ -425,8 +433,6 @@ function leerFormulario() {
   const t4 = leerTransporte('t4');
   const bobinado = leerOkObs('bobinado');
   const taco     = leerOkObs('taco');
-  const alarmaZ1 = swLeer('horn-alarma-z1');
-  const alarmaZ2 = swLeer('horn-alarma-z2');
 
   return {
     recepcion: {
@@ -474,11 +480,9 @@ function leerFormulario() {
       set_z2:    leerCampo('horn-set-z2'),
       z2:        leerCampo('horn-z2'),
       comb_z1:        leerCampo('horn-comb-z1'),
-      alarma_z1:      alarmaZ1.estado,
-      alarma_z1_obs:  alarmaZ1.obs,
+      alarma_z1:      leerCampo('horn-alarma-z1'),
       comb_z2:        leerCampo('horn-comb-z2'),
-      alarma_z2:      alarmaZ2.estado,
-      alarma_z2_obs:  alarmaZ2.obs,
+      alarma_z2:      leerCampo('horn-alarma-z2'),
       producto:  hornProd,
       tiempo_min: leerCampo('horn-tiempo'),
       t1_estado: t1.estado, t1_obs: t1.obs,
@@ -950,7 +954,7 @@ window.editarRegistro = function(firestoreId) {
 
   // Horno
   Object.entries({ 'horn-set-z1':r.horno?.set_z1, 'horn-z1':r.horno?.z1, 'horn-set-z2':r.horno?.set_z2,
-    'horn-z2':r.horno?.z2, 'horn-comb-z1':r.horno?.comb_z1, 'horn-comb-z2':r.horno?.comb_z2, 'horn-tiempo':r.horno?.tiempo_min, 'horn-obs':r.horno?.obs
+    'horn-z2':r.horno?.z2, 'horn-comb-z1':r.horno?.comb_z1, 'horn-comb-z2':r.horno?.comb_z2, 'horn-alarma-z1':valorAlarma(r.horno?.alarma_z1), 'horn-alarma-z2':valorAlarma(r.horno?.alarma_z2), 'horn-tiempo':r.horno?.tiempo_min, 'horn-obs':r.horno?.obs
   }).forEach(([id, val]) => { const el = document.getElementById(id); if (el) el.value = val || ''; });
   const hornProd = document.getElementById('horn-producto');
   if (hornProd && r.horno?.producto) {
@@ -958,8 +962,6 @@ window.editarRegistro = function(firestoreId) {
     if (exists) { hornProd.value = r.horno.producto; }
     else { hornProd.value = 'Otro'; document.getElementById('horn-producto-otro-wrap').style.display = 'block'; document.getElementById('horn-producto-otro').value = r.horno.producto; }
   }
-  swSet('horn-alarma-z1', r.horno?.alarma_z1, r.horno?.alarma_z1_obs);
-  swSet('horn-alarma-z2', r.horno?.alarma_z2, r.horno?.alarma_z2_obs);
   // Transportes 1-4
   ['t1','t2','t3','t4'].forEach(t => {
     const estado = r.horno?.[`${t}_estado`] || null;
@@ -1188,11 +1190,9 @@ window.verRegistro = function(firestoreId) {
       campo('Set zona 2', r.horno?.set_z2, 'modal-campo-valor'),
       campo('Zona 2', r.horno?.z2, 'modal-campo-valor'),
       campo('Temp. cámara combustión Z1', r.horno?.comb_z1, 'modal-campo-valor'),
-      campo('Alarma combustión Z1', r.horno?.alarma_z1, r.horno?.alarma_z1 === 'Con alarma' ? 'modal-campo-valor danger' : 'modal-campo-valor ok'),
-      campo('Detalle alarma Z1', r.horno?.alarma_z1_obs, 'modal-campo-valor'),
+      campo('Alarma cámara combustión Z1', valorAlarma(r.horno?.alarma_z1), 'modal-campo-valor'),
       campo('Temp. cámara combustión Z2', r.horno?.comb_z2, 'modal-campo-valor'),
-      campo('Alarma combustión Z2', r.horno?.alarma_z2, r.horno?.alarma_z2 === 'Con alarma' ? 'modal-campo-valor danger' : 'modal-campo-valor ok'),
-      campo('Detalle alarma Z2', r.horno?.alarma_z2_obs, 'modal-campo-valor'),
+      campo('Alarma cámara combustión Z2', valorAlarma(r.horno?.alarma_z2), 'modal-campo-valor'),
       campo('Tiempo cocción', r.horno?.tiempo_min ? r.horno.tiempo_min + ' min' : '', 'modal-campo-valor'),
       transporteHtml(1, 't1'),
       transporteHtml(2, 't2'),
@@ -1341,11 +1341,9 @@ function exportarExcel() {
         'Set Zona 2':       r.horno?.set_z2 || '',
         'Zona 2 Real':      r.horno?.z2 || '',
         'Temp. Comb. Z1':   r.horno?.comb_z1 || '',
-        'Alarma Comb. Z1':  r.horno?.alarma_z1 || '',
-        'Alarma Comb. Z1 Obs': r.horno?.alarma_z1_obs || '',
+        'Alarma Comb. Z1':  valorAlarma(r.horno?.alarma_z1),
         'Temp. Comb. Z2':   r.horno?.comb_z2 || '',
-        'Alarma Comb. Z2':  r.horno?.alarma_z2 || '',
-        'Alarma Comb. Z2 Obs': r.horno?.alarma_z2_obs || '',
+        'Alarma Comb. Z2':  valorAlarma(r.horno?.alarma_z2),
         'Tiempo (min)':     r.horno?.tiempo_min || '',
         'Transp. 1':        r.horno?.t1_estado || '',
         'Transp. 1 Obs':    r.horno?.t1_obs || '',
@@ -1660,7 +1658,7 @@ window.confirmarEliminarPrueba = function(firestoreId) {
 
 /* ════════════════════════════════════════════════════════════
    v1.14 — BOTONES SW (Sin alarma / OK / Observación, etc.)
-   Se usan en: alarmas de combustión (Horno), Análisis
+   Se usan en: Análisis
 ════════════════════════════════════════════════════════════ */
 document.querySelectorAll('.sw-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1704,6 +1702,7 @@ const COL_ANALISIS = 'calidad-analisis';
 // Medios de cultivo base. Los que se agregan con "Otro" se suman solos a la lista
 // (se toman de los análisis ya guardados).
 const MEDIOS_BASE = ['PCA', 'Cloranfenicol Glucosa'];
+const SECTORES_BASE = ['Recepción', 'Formulación', 'Fabricación', 'Cámara de fermento', 'Horno', 'Enfriador', 'Envase'];
 
 state.analisis = [];
 state.unsubAna = null;
@@ -1815,6 +1814,26 @@ function renderMediosSelect() {
   sel.value = [...sel.options].some(o => o.value === actual) ? actual : '';
 }
 
+function sectoresDisponibles() {
+  const base = new Set(SECTORES_BASE.map(m => m.toLowerCase()));
+  const extra = new Map();
+  state.analisis.forEach(a => {
+    const m = (a.punto || '').trim();
+    if (m && !base.has(m.toLowerCase()) && !extra.has(m.toLowerCase())) extra.set(m.toLowerCase(), m);
+  });
+  return [...SECTORES_BASE, ...[...extra.values()].sort((a, b) => a.localeCompare(b, 'es'))];
+}
+
+function renderSectoresSelect() {
+  const sel = document.getElementById('an-punto');
+  if (!sel) return;
+  const actual = sel.value;
+  sel.innerHTML = '<option value="">Seleccionar sector / equipo...</option>'
+    + sectoresDisponibles().map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('')
+    + '<option value="__otro__">➕ Otro (agregar nuevo)...</option>';
+  sel.value = [...sel.options].some(o => o.value === actual) ? actual : '';
+}
+
 function actualizarCamposAnalisis() {
   const esPlaca = swLeer('an-tipo').estado === 'Placa ambiental';
   const wrap = document.getElementById('an-exposicion-wrap');
@@ -1823,11 +1842,16 @@ function actualizarCamposAnalisis() {
   const otro = document.getElementById('an-medio')?.value === '__otro__';
   const otroWrap = document.getElementById('an-medio-otro-wrap');
   if (otroWrap) otroWrap.style.display = otro ? 'block' : 'none';
+  const puntoOtro = document.getElementById('an-punto')?.value === '__otro__';
+  const puntoWrap = document.getElementById('an-punto-otro-wrap');
+  if (puntoWrap) puntoWrap.style.display = puntoOtro ? 'block' : 'none';
 }
 
 document.querySelectorAll('.sw-btn[data-grp="an-tipo"]').forEach(b => b.addEventListener('click', actualizarCamposAnalisis));
 document.getElementById('an-medio')?.addEventListener('change', actualizarCamposAnalisis);
+document.getElementById('an-punto')?.addEventListener('change', actualizarCamposAnalisis);
 renderMediosSelect();
+renderSectoresSelect();
 
 function leerAnalisis() {
   const sel = leerCampo('an-medio');
@@ -1836,11 +1860,17 @@ function leerAnalisis() {
     const existente = mediosDisponibles().find(m => m.toLowerCase() === medio.toLowerCase());
     if (existente) medio = existente;
   }
+  const selPunto = leerCampo('an-punto');
+  let punto = selPunto === '__otro__' ? leerCampo('an-punto-otro') : selPunto;
+  if (selPunto === '__otro__' && punto) {
+    const existente = sectoresDisponibles().find(m => m.toLowerCase() === punto.toLowerCase());
+    if (existente) punto = existente;
+  }
   const tipo = swLeer('an-tipo').estado;
   return {
     tipo_muestra:   tipo,
     fecha_toma:     leerCampo('an-fecha-toma'),
-    punto:          leerCampo('an-punto'),
+    punto,
     medio,
     exposicion_min: tipo === 'Placa ambiental' ? leerCampo('an-exposicion') : '',
     fecha_lectura:  leerCampo('an-fecha-lectura'),
@@ -1855,6 +1885,8 @@ function limpiarAnalisis() {
   swLimpiarEn('#analisis-form');
   const sel = document.getElementById('an-medio');
   if (sel) sel.value = '';
+  const selP = document.getElementById('an-punto');
+  if (selP) selP.value = '';
   editAnalisisId = null;
   actualizarCamposAnalisis();
   const btn = document.getElementById('btn-guardar-analisis');
@@ -1871,6 +1903,7 @@ document.getElementById('btn-guardar-analisis')?.addEventListener('click', async
   const d = leerAnalisis();
   if (!d.tipo_muestra) { showToast('Elegí placa ambiental o hisopado', true); return; }
   if (!d.fecha_toma)   { showToast('Indicá la fecha de toma', true); return; }
+  if (leerCampo('an-punto') === '__otro__' && !d.punto) { showToast('Escribí el nombre del nuevo sector / equipo', true); return; }
   if (!d.medio)        { showToast(leerCampo('an-medio') === '__otro__' ? 'Escribí el nombre del nuevo medio' : 'Seleccioná el medio de cultivo', true); return; }
 
   const btn = document.getElementById('btn-guardar-analisis');
@@ -1925,6 +1958,7 @@ function buildAnalisisCard(a, showCrud) {
 
 function renderAnalisis() {
   renderMediosSelect();
+  renderSectoresSelect();
   const list = document.getElementById('analisis-list');
   if (list) {
     const items = itemsAnalisis();
@@ -1950,12 +1984,16 @@ window.editarAnalisis = function(firestoreId) {
   swSet('an-tipo', a.tipo_muestra, '');
   swSet('an-conf', a.conformidad, '');
   set('an-fecha-toma', a.fecha_toma);
-  set('an-punto', a.punto);
   set('an-exposicion', a.exposicion_min);
   set('an-fecha-lectura', a.fecha_lectura);
   set('an-recuento', a.recuento);
   set('an-obs', a.obs);
   renderMediosSelect();
+  renderSectoresSelect();
+  const selP = document.getElementById('an-punto');
+  if (!a.punto) { selP.value = ''; set('an-punto-otro', ''); }
+  else if ([...selP.options].some(o => o.value === a.punto)) { selP.value = a.punto; set('an-punto-otro', ''); }
+  else { selP.value = '__otro__'; set('an-punto-otro', a.punto); }
   const sel = document.getElementById('an-medio');
   if ([...sel.options].some(o => o.value === a.medio)) {
     sel.value = a.medio;
@@ -1982,7 +2020,7 @@ window.verAnalisis = function(firestoreId) {
     modalSeccion('Muestra', [
       modalCampo('Tipo', a.tipo_muestra),
       modalCampo('Fecha de toma', fechaCorta(a.fecha_toma)),
-      modalCampo('Punto de muestreo', a.punto),
+      modalCampo('Sector / equipo', a.punto),
       modalCampo('Medio de cultivo', a.medio),
       modalCampo('Exposición', a.exposicion_min ? a.exposicion_min + ' min' : ''),
     ]),
@@ -2002,7 +2040,7 @@ document.getElementById('btn-analisis-excel')?.addEventListener('click', () => {
   const rows = items.map(a => ({
     'Fecha de toma':     fechaCorta(a.fecha_toma),
     'Tipo de muestra':   a.tipo_muestra || '',
-    'Punto de muestreo': a.punto || '',
+    'Sector / equipo': a.punto || '',
     'Medio de cultivo':  a.medio || '',
     'Exposición (min)':  a.exposicion_min || '',
     'Fecha de lectura':  a.fecha_lectura ? fechaCorta(a.fecha_lectura) : '',
@@ -2087,7 +2125,7 @@ function statsHTML(p) {
     ${wrap('prod', 'Puntaje promedio por producto')}
     ${wrap('dia', 'Evolución del puntaje promedio')}
     ${wrap('horno', 'Temperaturas del horno')}
-    ${wrap('ana', 'Análisis — resultados')}`;
+    ${wrap('ana', 'Placas ambientales — conformes y no conformes por sector / equipo')}`;
 }
 
 function statsProductos(p) {
@@ -2162,7 +2200,6 @@ function renderStats(p) {
   const ptoProm = r1(promedio(puntuados.map(x => x.pt)));
   const leidos = anas.filter(a => a.conformidad);
   const conf = leidos.filter(a => a.conformidad === 'Conforme').length;
-  const alarmas = regs.reduce((n, r) => n + (r.horno?.alarma_z1 === 'Con alarma' ? 1 : 0) + (r.horno?.alarma_z2 === 'Con alarma' ? 1 : 0), 0);
 
   const kpi = (val, label) => `<div class="kpi"><div class="kpi-val">${val}</div><div class="kpi-label">${label}</div></div>`;
   document.getElementById(`${p}-kpis`).innerHTML = [
@@ -2171,7 +2208,6 @@ function renderStats(p) {
     kpi(regs.length, 'Registros'),
     kpi(anas.length, 'Análisis'),
     kpi(leidos.length ? Math.round(conf / leidos.length * 100) + '%' : '—', 'Análisis conformes'),
-    kpi(alarmas, 'Alarmas combustión'),
   ].join('');
 
   // 1) Puntaje por producto
@@ -2206,13 +2242,29 @@ function renderStats(p) {
    .filter(d => d.data.some(x => x !== null));
   drawChart(p, 'horno', { type: 'line', data: { labels, datasets: series }, options: chartOpts() }, series.length > 0);
 
-  // 4) Análisis
-  const nConf = conf, nNo = leidos.length - conf, nPend = anas.length - leidos.length;
+  // 4) Placas ambientales — conformes / no conformes por sector o equipo (lineal)
+  const placas = anas.filter(a => a.tipo_muestra === 'Placa ambiental');
+  const porPunto = new Map();
+  placas.forEach(a => {
+    const nombre = (a.punto || '').trim() || 'Sin sector / equipo';
+    const k = nombre.toLowerCase();
+    const o = porPunto.get(k) || { nombre, c: 0, n: 0 };
+    if (a.conformidad === 'Conforme') o.c++;
+    else if (a.conformidad === 'No conforme') o.n++;
+    porPunto.set(k, o);
+  });
+  const puntos = [...porPunto.values()].sort((x, y) => x.nombre.localeCompare(y.nombre, 'es'));
+  const tickY = { color: STATS_COL.muted, font: { family: 'DM Mono', size: 10 }, precision: 0 };
   drawChart(p, 'ana', {
-    type: 'doughnut',
-    data: { labels: ['Conforme', 'No conforme', 'Pendiente de lectura'], datasets: [{ data: [nConf, nNo, nPend], backgroundColor: [STATS_COL.green, STATS_COL.red, STATS_COL.amber], borderColor: '#1b2d42' }] },
-    options: chartOpts({}, false),
-  }, anas.length > 0);
+    type: 'line',
+    data: { labels: puntos.map(x => x.nombre), datasets: [
+      { label: 'Conforme',    data: puntos.map(x => x.c), borderColor: STATS_COL.green, backgroundColor: STATS_COL.green, tension: .25, pointRadius: 4 },
+      { label: 'No conforme', data: puntos.map(x => x.n), borderColor: STATS_COL.red,   backgroundColor: STATS_COL.red,   tension: .25, pointRadius: 4 },
+    ] },
+    options: chartOpts({
+      scales: { y: { beginAtZero: true, ticks: tickY, title: { display: true, text: 'Cantidad de registros', color: STATS_COL.muted } } },
+    }),
+  }, puntos.length > 0);
 }
 
 function renderStatsVisibles() {
