@@ -1702,7 +1702,8 @@ const COL_ANALISIS = 'calidad-analisis';
 // Medios de cultivo base. Los que se agregan con "Otro" se suman solos a la lista
 // (se toman de los análisis ya guardados).
 const MEDIOS_BASE = ['PCA', 'Cloranfenicol Glucosa'];
-const SECTORES_BASE = ['Recepción', 'Formulación', 'Fabricación', 'Cámara de fermento', 'Horno', 'Enfriador', 'Envase'];
+// Sin sectores precargados: la lista se arma solo con los que se agregan en los análisis (opción "Otro").
+const SECTORES_BASE = [];
 
 state.analisis = [];
 state.unsubAna = null;
