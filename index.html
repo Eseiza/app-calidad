@@ -234,26 +234,8 @@
           <div class="field"><label>Zona 2 real</label><input type="text" id="horn-z2" placeholder="Valor"></div>
           <div class="field"><label>Temp. cámara combustión Z1</label><input type="text" id="horn-comb-z1" placeholder="Valor"></div>
           <div class="field"><label>Temp. cámara combustión Z2</label><input type="text" id="horn-comb-z2" placeholder="Valor"></div>
-          <div class="field full">
-            <label>Alarma cámara de combustión — Zona 1</label>
-            <div class="sw-row">
-              <div class="sw-btn ok-btn" data-grp="horn-alarma-z1" data-v="Sin alarma">✅ Sin alarma</div>
-              <div class="sw-btn nc-btn" data-grp="horn-alarma-z1" data-v="Con alarma" data-detalle="1">🚨 Con alarma</div>
-            </div>
-            <div class="sw-detail" id="sw-detail-horn-alarma-z1" style="display:none">
-              <textarea id="sw-obs-horn-alarma-z1" placeholder="Detalle de la alarma..."></textarea>
-            </div>
-          </div>
-          <div class="field full">
-            <label>Alarma cámara de combustión — Zona 2</label>
-            <div class="sw-row">
-              <div class="sw-btn ok-btn" data-grp="horn-alarma-z2" data-v="Sin alarma">✅ Sin alarma</div>
-              <div class="sw-btn nc-btn" data-grp="horn-alarma-z2" data-v="Con alarma" data-detalle="1">🚨 Con alarma</div>
-            </div>
-            <div class="sw-detail" id="sw-detail-horn-alarma-z2" style="display:none">
-              <textarea id="sw-obs-horn-alarma-z2" placeholder="Detalle de la alarma..."></textarea>
-            </div>
-          </div>
+          <div class="field"><label>Alarma cámara combustión Z1</label><input type="text" id="horn-alarma-z1" placeholder="Valor"></div>
+          <div class="field"><label>Alarma cámara combustión Z2</label><input type="text" id="horn-alarma-z2" placeholder="Valor"></div>
           <div class="field full">
             <label>Producto</label>
             <select id="horn-producto">
@@ -660,14 +642,21 @@
         <div class="form-grid">
           <div class="field"><label>Fecha de toma</label><input type="date" id="an-fecha-toma"></div>
           <div class="field" id="an-exposicion-wrap" style="display:none"><label>Tiempo de exposición (min)</label><input type="number" id="an-exposicion" placeholder="Ej: 15" min="0"></div>
-          <div class="field full"><label>Punto de muestreo</label><input type="text" id="an-punto" placeholder="Sector, superficie o equipo"></div>
+          <div class="field full">
+            <label>Sector / equipo</label>
+            <select id="an-punto"></select>
+          </div>
+          <div class="field full" id="an-punto-otro-wrap" style="display:none">
+            <label>Nombre del nuevo sector / equipo</label>
+            <input type="text" id="an-punto-otro" placeholder="Ej: Mesa de enfriado">
+          </div>
           <div class="field full">
             <label>Medio de cultivo</label>
             <select id="an-medio"></select>
           </div>
           <div class="field full" id="an-medio-otro-wrap" style="display:none">
             <label>Nombre del nuevo medio</label>
-            <input type="text" id="an-medio-otro" placeholder="Ej: Agar...">
+            <input type="text" id="an-medio-otro" placeholder="Ej: Agar Baird Parker">
           </div>
         </div>
       </div>
