@@ -27,7 +27,7 @@ const ROLES_CRUD = ['admin', 'calidad'];
 
 /* ══ USUARIOS ══ */
 const USERS = {
-  "calidad1":  { password: "Calidad.2026",  role: "calidad",      nombre: "Mili" },
+  "calidad1":  { password: "Calidad.2026",  role: "calidad",      nombre: "Milagros Iparraguirre" },
   "calidad2":  { password: "Calidad.2026",  role: "calidad",      nombre: "Calidad" },
   "pasanteM":  { password: "Pasante.2026",  role: "pasante",      nombre: "Pasante TM" },
   "pasanteT":  { password: "Pasante.2026",  role: "pasante",      nombre: "Pasante TT" },
@@ -797,6 +797,17 @@ function scoringsPorSubtipo(sub) {
   if (sub === 'normal') return state.scorings.filter(s => s.subtipo !== 'diario');
   return state.scorings;
 }
+/* ══ ROL DE QUIEN CARGÓ UN REGISTRO (para el color de las tarjetas) ══ */
+const ROL_LABELS = { admin: 'ADMIN', calidad: 'CALIDAD', pasante: 'PASANTE', visualizador: 'VISUALIZADOR' };
+function rolDeRegistro(r) {
+  if (r && r.rol) return r.rol;
+  const u = Object.values(USERS).find(x => x.nombre === (r && r.usuario));
+  return u ? u.role : 'calidad';
+}
+function rolTagHtml(rol) {
+  return `<span class="role-tag ${rol}">${ROL_LABELS[rol] || String(rol).toUpperCase()}</span>`;
+}
+
 function subtipoFiltro() { return document.getElementById('filtro-subtipo')?.value || ''; }
 
 function renderHistorial() {
@@ -844,10 +855,11 @@ function buildRegistroCard(r, showCrud) {
       <button class="crud-btn del"  onclick="confirmarEliminar('${r.firestoreId}','${COL_REG}')">🗑️ Eliminar</button>
     </div>` : '';
   const editTag = r.editado ? `<span class="badge-editado">editado</span>` : '';
+  const rol = rolDeRegistro(r);
   return `
-    <div class="registro-card" onclick="verRegistro('${r.firestoreId}')">
+    <div class="registro-card rol-${rol}" onclick="verRegistro('${r.firestoreId}')">
       <div class="registro-header">
-        <div class="registro-titulo">Registro de Calidad ${editTag}</div>
+        <div class="registro-titulo">Registro de Calidad ${editTag} ${rolTagHtml(rol)}</div>
         <span class="badge-turno ${r.turno}">${turnoLabel[r.turno] || r.turno}</span>
       </div>
       <div class="registro-meta">${formatFecha(r.fecha)} · ${r.usuario}</div>
@@ -865,10 +877,11 @@ function buildScoringCard(s, showCrud) {
       <button class="crud-btn del"  onclick="confirmarEliminar('${s.firestoreId}','${COL_SCORING}')">🗑️ Eliminar</button>
     </div>` : '';
   const editTag = s.editado ? `<span class="badge-editado">editado</span>` : '';
+  const rol = rolDeRegistro(s);
   return `
-    <div class="registro-card scoring-card" onclick="verScoring('${s.firestoreId}')">
+    <div class="registro-card scoring-card rol-${rol}" onclick="verScoring('${s.firestoreId}')">
       <div class="registro-header">
-        <div class="registro-titulo">${s.producto || 'Scoring'} ${editTag}</div>
+        <div class="registro-titulo">${s.producto || 'Scoring'} ${editTag} ${rolTagHtml(rol)}</div>
         <div style="display:flex;gap:6px;align-items:center">
           <span class="badge-turno ${s.turno}">${turnoLabel[s.turno] || s.turno}</span>
           <span class="badge-cat">${catLabel[s.categoria] || s.categoria}</span>
@@ -1513,37 +1526,34 @@ function renderPruebas() {
   const wrapFiltro = document.getElementById('informes-filtro-wrap');
   if (wrapFiltro) wrapFiltro.style.display = esPasante ? 'none' : '';
   const rolFiltro = document.getElementById('informes-filtro-rol')?.value || '';
-  let items = state.pruebas;
+  let items = state.pruebas.filter(p => !p.borrador || p.usuario === state.currentUser);
   if (esPasante) items = items.filter(p => p.usuario === state.currentUser);
   else if (rolFiltro) items = items.filter(p => rolDeInforme(p) === rolFiltro);
   list.innerHTML = items.length ? items.map(buildPruebaCard).join('') : emptyMsg();
 }
 
 // Rol de quien hizo el informe (los informes viejos no guardaban el rol: se busca por nombre de usuario)
-function rolDeInforme(p) {
-  if (p.rol) return p.rol;
-  const u = Object.values(USERS).find(x => x.nombre === p.usuario);
-  return u ? u.role : 'calidad';
-}
+function rolDeInforme(p) { return rolDeRegistro(p); }
 
 document.getElementById('informes-filtro-rol')?.addEventListener('change', renderPruebas);
 
 function buildPruebaCard(p) {
   const rol = rolDeInforme(p);
-  const rolLabel = { admin: 'ADMIN', calidad: 'CALIDAD', pasante: 'PASANTE' }[rol] || rol.toUpperCase();
   const puedeEditar = state.role !== 'pasante' || p.usuario === state.currentUser;
   const crudHtml = puedeEditar ? `
       <div class="crud-btns" onclick="event.stopPropagation()">
         <button class="crud-btn edit" onclick="abrirEditorPrueba('${p.firestoreId}')">✏️ Editar</button>
         <button class="crud-btn del"  onclick="confirmarEliminarPrueba('${p.firestoreId}')">🗑️ Eliminar</button>
       </div>` : '';
-  const editTag = p.editado ? `<span class="badge-editado">editado</span>` : '';
+  const editTag = p.borrador
+    ? `<span class="badge-editado">borrador</span>`
+    : (p.editado ? `<span class="badge-editado">editado</span>` : '');
   const textoPlano = (p.contenido || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   const preview = textoPlano.slice(0, 140);
   return `
     <div class="registro-card prueba-card rol-${rol}" onclick="abrirEditorPrueba('${p.firestoreId}')">
       <div class="registro-header">
-        <div class="registro-titulo">${p.asunto || '(Sin asunto)'} ${editTag} <span class="role-tag ${rol}">${rolLabel}</span></div>
+        <div class="registro-titulo">${p.asunto || '(Sin asunto)'} ${editTag} ${rolTagHtml(rol)}</div>
       </div>
       <div class="registro-meta">${formatFecha(p.fecha)} · ${p.usuario}</div>
       ${preview ? `<div class="prueba-preview">${preview}${textoPlano.length > 140 ? '…' : ''}</div>` : ''}
@@ -1553,6 +1563,7 @@ function buildPruebaCard(p) {
 
 window.abrirEditorPrueba = function(firestoreId) {
   state.editandoPruebaId = firestoreId || null;
+  state.editandoEsBorrador = false;
   const overlay = document.getElementById('prueba-editor-overlay');
   const asunto  = document.getElementById('prueba-asunto');
   const body    = document.getElementById('prueba-body');
@@ -1563,15 +1574,20 @@ window.abrirEditorPrueba = function(firestoreId) {
     const p = state.pruebas.find(x => x.firestoreId === firestoreId);
     if (!p) return;
     if (state.role === 'pasante' && p.usuario !== state.currentUser) return;
+    state.editandoEsBorrador = !!p.borrador;
     asunto.value = p.asunto || '';
     body.innerHTML = p.contenido || '';
-    meta.textContent = `${p.usuario} · ${formatFecha(p.fecha)}${p.editado ? ' · (editado)' : ''}`;
+    meta.textContent = p.borrador
+      ? `${p.usuario} · borrador · ${formatFecha(p.fechaBorrador || p.fecha)}`
+      : `${p.usuario} · ${formatFecha(p.fecha)}${p.editado ? ' · (editado)' : ''}`;
   } else {
     asunto.value = '';
     body.innerHTML = '';
     meta.textContent = `${state.currentUser} · ${formatFecha(new Date().toISOString())}`;
   }
   overlay.style.display = 'flex';
+  state.snapPrueba = estadoActualPrueba();
+  iniciarAutoguardado();
   setTimeout(() => asunto.focus(), 50);
 };
 
@@ -1579,11 +1595,12 @@ function cerrarEditorPrueba() {
   const overlay = document.getElementById('prueba-editor-overlay');
   if (overlay) overlay.style.display = 'none';
   state.editandoPruebaId = null;
+  state.editandoEsBorrador = false;
+  state.snapPrueba = null;
+  detenerAutoguardado();
 }
-document.getElementById('btn-cerrar-prueba')?.addEventListener('click', cerrarEditorPrueba);
-document.getElementById('prueba-editor-overlay')?.addEventListener('click', e => {
-  if (e.target.id === 'prueba-editor-overlay') cerrarEditorPrueba();
-});
+document.getElementById('btn-cerrar-prueba')?.addEventListener('click', intentarCerrarEditorPrueba);
+// (el editor ya no se cierra al tocar afuera: solo con la cruz, para no perder el texto por accidente)
 
 document.getElementById('btn-nueva-prueba')?.addEventListener('click', () => window.abrirEditorPrueba());
 
@@ -1604,6 +1621,131 @@ document.querySelectorAll('#prueba-editor-overlay .hoja-toolbar button[data-cmd]
   });
 });
 
+/* ── Cierre seguro + autoguardado del informe ── */
+function estadoActualPrueba() {
+  const a = document.getElementById('prueba-asunto')?.value || '';
+  let c = (document.getElementById('prueba-body')?.innerHTML || '').trim();
+  if (c === '<br>') c = '';
+  return a.trim() + '\u0000' + c;
+}
+
+function hayCambiosPrueba() {
+  const ov = document.getElementById('prueba-editor-overlay');
+  return !!ov && ov.style.display !== 'none' && state.snapPrueba != null && estadoActualPrueba() !== state.snapPrueba;
+}
+
+function dialogoCierrePrueba(puedeBorrador) {
+  return new Promise(resolve => {
+    const ov = document.createElement('div');
+    ov.className = 'modal-overlay';
+    ov.style.display = 'flex';
+    ov.innerHTML = `
+      <div class="modal modal-registro" style="max-width:420px">
+        <div class="modal-header"><div class="modal-title">⚠️ Cambios sin guardar</div></div>
+        <div class="modal-body">
+          <p style="color:var(--text);margin-bottom:20px;line-height:1.6">Si cerrás ahora se pierde lo que escribiste desde la última vez que se guardó.</p>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            ${puedeBorrador ? '<button class="btn btn-sm btn-green" data-r="guardar">📝 GUARDAR BORRADOR</button>' : ''}
+            <button class="btn btn-sm btn-outline" data-r="seguir">SEGUIR EDITANDO</button>
+            <button class="btn btn-sm" data-r="descartar" style="background:var(--accent2)">DESCARTAR CAMBIOS</button>
+          </div>
+        </div>
+      </div>`;
+    ov.querySelectorAll('button[data-r]').forEach(b => b.addEventListener('click', () => {
+      ov.remove();
+      resolve(b.dataset.r);
+    }));
+    document.body.appendChild(ov);
+  });
+}
+
+async function intentarCerrarEditorPrueba() {
+  if (!hayCambiosPrueba()) { cerrarEditorPrueba(); return; }
+  const puedeBorrador = !state.editandoPruebaId || state.editandoEsBorrador;
+  const r = await dialogoCierrePrueba(puedeBorrador);
+  if (r === 'guardar') await guardarBorradorPrueba();
+  else if (r === 'descartar') cerrarEditorPrueba();
+}
+
+window.addEventListener('beforeunload', e => {
+  if (hayCambiosPrueba()) { e.preventDefault(); e.returnValue = ''; }
+});
+
+// Autoguardado: cada 20 s, si hubo cambios, guarda como borrador (informes nuevos o que ya son borrador)
+const AUTOGUARDADO_MS = 20000;
+function iniciarAutoguardado() {
+  detenerAutoguardado();
+  state.timerAutosave = setInterval(autoguardarPrueba, AUTOGUARDADO_MS);
+}
+function detenerAutoguardado() {
+  if (state.timerAutosave) { clearInterval(state.timerAutosave); state.timerAutosave = null; }
+}
+async function esperarAutosave() {
+  while (state.autosaving) await new Promise(r => setTimeout(r, 100));
+}
+
+async function autoguardarPrueba() {
+  if (state.autosaving || !hayCambiosPrueba()) return;
+  if (state.editandoPruebaId && !state.editandoEsBorrador) return; // informe ya guardado: se guarda a mano
+  const asunto = leerCampo('prueba-asunto');
+  let contenido = (document.getElementById('prueba-body')?.innerHTML || '').trim();
+  if (contenido === '<br>') contenido = '';
+  if (!asunto && !contenido) return;
+
+  const actual = estadoActualPrueba();
+  state.autosaving = true;
+  try {
+    const ahora = new Date();
+    if (state.editandoPruebaId) {
+      await updateDoc(doc(db, COL_PRUEBAS, state.editandoPruebaId), {
+        asunto, contenido, fechaBorrador: ahora.toISOString(),
+      });
+    } else {
+      const ref = await addDoc(collection(db, COL_PRUEBAS), {
+        asunto, contenido, borrador: true,
+        timestamp: ahora.getTime(), fecha: ahora.toISOString(), fechaBorrador: ahora.toISOString(),
+        usuario: state.currentUser, rol: state.role,
+      });
+      state.editandoPruebaId = ref.id;
+      state.editandoEsBorrador = true;
+    }
+    state.snapPrueba = actual;
+    const meta = document.getElementById('prueba-meta');
+    if (meta) meta.textContent = `${state.currentUser} · borrador autoguardado ${ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`;
+  } catch (e) { /* silencioso: se reintenta en el próximo ciclo */ }
+  state.autosaving = false;
+}
+
+/* Borradores: se guardan en la misma colección con borrador:true y solo los ve quien los escribió.
+   (El botón BORRADOR visible se quitó; se guarda desde el diálogo al cerrar con la X.) */
+async function guardarBorradorPrueba() {
+  const asunto    = leerCampo('prueba-asunto');
+  const bodyEl    = document.getElementById('prueba-body');
+  let contenido   = bodyEl ? bodyEl.innerHTML.trim() : '';
+  if (contenido === '<br>') contenido = '';
+  if (!asunto && !contenido) { showToast('No hay nada para guardar', true); return; }
+
+  try {
+    await esperarAutosave();
+    const ahora = new Date();
+    if (state.editandoPruebaId && state.editandoEsBorrador) {
+      await updateDoc(doc(db, COL_PRUEBAS, state.editandoPruebaId), {
+        asunto, contenido, fechaBorrador: ahora.toISOString(),
+      });
+    } else {
+      await addDoc(collection(db, COL_PRUEBAS), {
+        asunto, contenido, borrador: true,
+        timestamp: ahora.getTime(), fecha: ahora.toISOString(), fechaBorrador: ahora.toISOString(),
+        usuario: state.currentUser, rol: state.role,
+      });
+    }
+    showToast('✓ Borrador guardado');
+    cerrarEditorPrueba();
+  } catch (e) {
+    showToast('Error al guardar borrador: ' + e.message, true);
+  }
+}
+
 document.getElementById('btn-guardar-prueba')?.addEventListener('click', async () => {
   const asunto    = leerCampo('prueba-asunto');
   const bodyEl    = document.getElementById('prueba-body');
@@ -1615,7 +1757,16 @@ document.getElementById('btn-guardar-prueba')?.addEventListener('click', async (
   btn.disabled = true; btn.textContent = 'GUARDANDO...';
 
   try {
-    if (state.editandoPruebaId) {
+    await esperarAutosave();
+    if (state.editandoPruebaId && state.editandoEsBorrador) {
+      // El borrador pasa a ser informe definitivo: toma la fecha de ahora y sale de "borrador"
+      const ahora = new Date();
+      await updateDoc(doc(db, COL_PRUEBAS, state.editandoPruebaId), {
+        asunto, contenido, borrador: false,
+        timestamp: ahora.getTime(), fecha: ahora.toISOString(),
+      });
+      showToast('✓ Informe guardado');
+    } else if (state.editandoPruebaId) {
       await updateDoc(doc(db, COL_PRUEBAS, state.editandoPruebaId), {
         asunto, contenido, editado: true, fechaEdicion: new Date().toISOString(),
       });
@@ -1623,7 +1774,7 @@ document.getElementById('btn-guardar-prueba')?.addEventListener('click', async (
     } else {
       const ahora = new Date();
       await addDoc(collection(db, COL_PRUEBAS), {
-        asunto, contenido,
+        asunto, contenido, borrador: false,
         timestamp: ahora.getTime(), fecha: ahora.toISOString(),
         usuario: state.currentUser, rol: state.role,
       });
@@ -1947,9 +2098,9 @@ function buildAnalisisCard(a, showCrud) {
   if (a.conformidad === 'Conforme')    estado = '<span class="badge-cat">CONFORME</span>';
   if (a.conformidad === 'No conforme') estado = '<span class="badge-nc">NO CONFORME</span>';
   return `
-    <div class="registro-card analisis-card" onclick="verAnalisis('${a.firestoreId}')">
+    <div class="registro-card analisis-card rol-${rolDeRegistro(a)}" onclick="verAnalisis('${a.firestoreId}')">
       <div class="registro-header">
-        <div class="registro-titulo">${esc(a.tipo_muestra)} ${editTag}</div>
+        <div class="registro-titulo">${esc(a.tipo_muestra)} ${editTag} ${rolTagHtml(rolDeRegistro(a))}</div>
         ${estado}
       </div>
       <div class="registro-meta">${fechaCorta(a.fecha_toma)} · ${esc(a.medio)}${a.punto ? ' · ' + esc(a.punto) : ''} · ${esc(a.usuario)}</div>
