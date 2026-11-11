@@ -13,6 +13,12 @@
   --accent2:   #e8452c;
   --green:     #4caf50;
   --amber:     #c8860a;
+
+  /* colores por rol */
+  --rol-pasante:      #8a5fd8; /* violeta */
+  --rol-visualizador: #4fc3f7; /* celeste */
+  --rol-admin:        #ec5f9e; /* rosa */
+  --rol-calidad:      #4caf50; /* verde */
   --text:      #e8f0fe;
   --muted:     #6a8faf;
   --font-head: 'Bebas Neue', sans-serif;
@@ -68,7 +74,9 @@ body {
   background-size: 200% 100%;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
-.login-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+.login-brand { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.login-heading { text-align: left; }
+.login-heading-top { font-family: var(--font-head); font-size: 20px; letter-spacing: 6px; color: var(--text); line-height: 1; margin-bottom: 4px; }
 .login-title {
   font-family: var(--font-head); font-size: 38px; letter-spacing: 3px;
   color: var(--accent); line-height: 1;
@@ -363,16 +371,16 @@ header {
 .logo-sub { font-family: var(--font-mono); font-size: 8px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; display: block; line-height: 1; margin-top: 1px; }
 .hbadge { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
 .role-tag { padding: 3px 9px; border-radius: 20px; font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
-.role-tag.calidad { background: var(--accent); color: #fff; }
-.role-tag.admin   { background: var(--amber);  color: #fff; }
-.role-tag.pasante { background: #6a3ab5;        color: #fff; }
-.role-tag.vis     { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.role-tag.calidad      { background: var(--rol-calidad);      color: #fff; }
+.role-tag.admin        { background: var(--rol-admin);        color: #fff; }
+.role-tag.pasante      { background: var(--rol-pasante);      color: #fff; }
+.role-tag.visualizador { background: var(--rol-visualizador); color: #0d1b2a; }
 
 /* ══ TABS ══ */
 .vis-tabs { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 54px; z-index: 99; overflow-x: auto; }
 .vis-tab {
-  flex-shrink: 0; text-align: center; padding: 13px 16px; font-family: var(--font-mono); font-size: 11px;
-  letter-spacing: 1px; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; transition: all .2s; touch-action: manipulation;
+  flex-shrink: 0; text-align: center; padding: 11px 14px; font-family: var(--font-body); font-size: 13px; font-weight: 500;
+  letter-spacing: .2px; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; transition: all .2s; touch-action: manipulation;
 }
 .vis-tab:hover { color: var(--text); }
 .vis-tab.active { color: var(--accent); border-bottom-color: var(--accent); text-shadow: 0 0 12px rgba(55,138,221,.3); }
@@ -502,12 +510,8 @@ header {
 .export-scoring-dia { margin-top:16px; padding-top:14px; border-top:1px solid var(--border, rgba(255,255,255,.1)); }
 
 /* ══ PRUEBAS DE PAN — hoja tipo mail ══ */
-.prueba-card { border-left-color: var(--accent); }
-.prueba-card.rol-calidad { border-left-color: var(--accent); }
-.prueba-card.rol-admin   { border-left-color: var(--amber); }
-.prueba-card.rol-pasante { border-left-color: #8a5fd8; background: linear-gradient(90deg, rgba(138,95,216,.08), transparent 40%), var(--surface); }
+.prueba-card { border-left-color: #156d3b; }
 .prueba-card:hover { box-shadow: var(--shadow-soft), var(--shadow-glow-accent); }
-.prueba-card.rol-pasante:hover { box-shadow: var(--shadow-soft), 0 0 0 1px rgba(138,95,216,.35), 0 6px 20px rgba(138,95,216,.18); }
 .prueba-card .role-tag { margin-left: 6px; vertical-align: middle; }
 .prueba-preview { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
 
@@ -612,3 +616,20 @@ input[type="time"]::-webkit-datetime-edit { padding: 0; }
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator { opacity: .7; cursor: pointer; }
 .form-grid .field, .filtros-grid .field { min-width: 0; }
+
+/* ══ COLOR POR ROL EN TODOS LOS REGISTROS ══ */
+.registro-card.rol-pasante      { --rc: 138,95,216;  border-left-color: var(--rol-pasante);      background: linear-gradient(90deg, rgba(138,95,216,.10), transparent 45%), var(--surface); }
+.registro-card.rol-visualizador { --rc: 79,195,247;  border-left-color: var(--rol-visualizador); background: linear-gradient(90deg, rgba(79,195,247,.10), transparent 45%), var(--surface); }
+.registro-card.rol-admin        { --rc: 236,95,158;  border-left-color: var(--rol-admin);        background: linear-gradient(90deg, rgba(236,95,158,.10), transparent 45%), var(--surface); }
+.registro-card.rol-calidad      { --rc: 76,175,80;   border-left-color: var(--rol-calidad);      background: linear-gradient(90deg, rgba(76,175,80,.10), transparent 45%), var(--surface); }
+.registro-card[class*="rol-"]:hover { box-shadow: var(--shadow-soft), 0 0 0 1px rgba(var(--rc),.35), 0 6px 20px rgba(var(--rc),.18); }
+.registro-card .role-tag { margin-left: 6px; vertical-align: middle; }
+
+/* ══ LOGO ══ */
+.login-logo { height: 56px; width: auto; max-width: 140px; object-fit: contain; display: block; }
+.logo-img   { height: 34px; width: auto; max-width: 100px; object-fit: contain; display: block; }
+@media (max-width: 480px) { .login-logo { height: 46px; } .logo-img { height: 30px; } }
+
+/* ══ NAV MÁS LIMPIO ══ */
+.hbadge #main-nombre, .hbadge #vis-nombre { letter-spacing: 0; font-size: 12px; }
+@media (max-width: 600px) { .hbadge #main-nombre, .hbadge #vis-nombre { display: none; } }
