@@ -12,6 +12,7 @@
 <!-- LOGIN -->
 <div id="screen-login">
   <div class="login-box">
+  
     <div class="login-brand">
       <div class="login-heading">
         <div class="login-heading-top">CONTROL DE</div>
@@ -742,6 +743,7 @@
     <div class="vis-tab" data-tab="tab-vis-scoring">Scoring</div>
     <div class="vis-tab" data-tab="tab-vis-analisis">Análisis</div>
     <div class="vis-tab" data-tab="tab-vis-stats">Estadísticas</div>
+    <div class="vis-tab" data-tab="tab-vis-informes">Informes</div>
   </div>
   <div id="tab-vis-partes" class="vis-tab-content app-content active">
     <div class="section-header"><div class="section-title" style="margin:0">REGISTROS DE CALIDAD</div></div>
@@ -768,9 +770,31 @@
     <div class="section-header"><div class="section-title" style="margin:0">ESTADÍSTICAS</div></div>
     <div id="vst-root"></div>
   </div>
+  <div id="tab-vis-informes" class="vis-tab-content app-content">
+    <div class="section-header"><div class="section-title" style="margin:0">INFORMES</div></div>
+    <div id="vis-informes-list"></div>
+  </div>
   <div id="tab-vis-analisis" class="vis-tab-content app-content">
     <div class="section-header"><div class="section-title" style="margin:0">ANÁLISIS</div></div>
     <div id="vis-analisis-list"></div>
+  </div>
+</div>
+
+<!-- VISOR DE INFORME (solo lectura, para el visualizador) -->
+<div id="informe-vis-overlay" class="modal-overlay" style="display:none">
+  <div class="hoja-wrap">
+    <div class="hoja-toolbar-top">
+      <button class="btn-logout" id="btn-cerrar-informe-vis" title="Cerrar">✕ Cerrar</button>
+      <div class="hoja-toolbar-top-title">INFORME</div>
+      <span style="width:72px"></span>
+    </div>
+    <div class="hoja">
+      <div class="hoja-header">
+        <div class="hoja-campo"><label>Asunto</label><div id="informe-vis-asunto" style="font-size:18px;font-weight:700;color:#1c1c1a"></div></div>
+        <div class="hoja-meta" id="informe-vis-meta">—</div>
+      </div>
+      <div class="hoja-body" id="informe-vis-body"></div>
+    </div>
   </div>
 </div>
 
