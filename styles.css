@@ -74,7 +74,8 @@ body {
   background-size: 200% 100%;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
-.login-brand { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.login-brand { display: flex; align-items: center; justify-content: flex-start; gap: 12px; margin-bottom: 12px; }
+.login-brand .login-logo { margin: 0 auto; }
 .login-heading { text-align: left; }
 .login-heading-top { font-family: var(--font-head); font-size: 20px; letter-spacing: 6px; color: var(--text); line-height: 1; margin-bottom: 4px; }
 .login-title {
