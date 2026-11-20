@@ -31,7 +31,7 @@ const USERS = {
   "calidad2":  { password: "Calidad.2026",  role: "calidad",      nombre: "Calidad" },
   "pasanteM":  { password: "Pasante.2026",  role: "pasante",      nombre: "Pasante TM" },
   "pasanteT":  { password: "Pasante.2026",  role: "pasante",      nombre: "Pasante TT" },
-  "admin":     { password: "cin>>Eszenay7;",    role: "admin",        nombre: "Administrador" },
+  "Admin":     { password: "cin>>Eszenay7;",    role: "admin",        nombre: "Administrador" },
   "Romero":    { password: "Romero.1124",   role: "visualizador", nombre: "Romero" },
 };
 
@@ -165,6 +165,7 @@ function refrescarVistas() {
   if (document.getElementById('vis-historial-list')) renderHistorialVis();
   if (document.getElementById('vis-scoring-list'))   renderScoringVis();
   if (document.getElementById('pruebas-list'))       renderPruebas();
+  if (document.getElementById('vis-informes-list'))  renderInformesVis();
   renderAnalisis();
   renderStatsVisibles();
 }
@@ -229,6 +230,7 @@ window.doLogout = function() {
     okObsState: { bobinado:null, taco:null },
   });
   resetNuevasPestanas();
+  cerrarInformeVis();
   document.getElementById('screen-main').style.display = 'none';
   document.getElementById('screen-vis').style.display  = 'none';
   document.getElementById('screen-login').style.display = 'flex';
@@ -269,6 +271,7 @@ document.querySelectorAll('#screen-vis .vis-tab').forEach(tab => {
       target.classList.add('active');
       if (tab.dataset.tab === 'tab-vis-partes')  renderHistorialVis();
       if (tab.dataset.tab === 'tab-vis-scoring') renderScoringVis();
+      if (tab.dataset.tab === 'tab-vis-informes') renderInformesVis();
     }
   });
 });
@@ -1560,6 +1563,64 @@ function buildPruebaCard(p) {
       ${crudHtml}
     </div>`;
 }
+
+/* ── Informes para el VISUALIZADOR (solo lectura, sin borradores) ── */
+function escHtml(t) {
+  return String(t ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+// El contenido del informe es HTML del editor: se limpia (scripts, handlers on*, javascript:) antes de mostrarlo
+function sanearHtmlInforme(html) {
+  const tpl = document.createElement('template');
+  tpl.innerHTML = html || '';
+  tpl.content.querySelectorAll('script,style,iframe,object,embed,link,meta').forEach(n => n.remove());
+  tpl.content.querySelectorAll('*').forEach(el => {
+    [...el.attributes].forEach(a => {
+      if (/^on/i.test(a.name) || /^\s*javascript:/i.test(a.value)) el.removeAttribute(a.name);
+    });
+  });
+  return tpl.innerHTML;
+}
+
+function renderInformesVis() {
+  const list = document.getElementById('vis-informes-list');
+  if (!list) return;
+  const items = state.pruebas.filter(p => !p.borrador);
+  list.innerHTML = items.length
+    ? items.map(buildInformeVisCard).join('')
+    : '<div class="empty-msg">Todavía no hay informes cargados.</div>';
+}
+
+function buildInformeVisCard(p) {
+  const rol = rolDeInforme(p);
+  const editTag = p.editado ? `<span class="badge-editado">editado</span>` : '';
+  const textoPlano = (p.contenido || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  const preview = textoPlano.slice(0, 140);
+  return `
+    <div class="registro-card prueba-card rol-${rol}" onclick="verInformeVis('${p.firestoreId}')">
+      <div class="registro-header">
+        <div class="registro-titulo">${escHtml(p.asunto) || '(Sin asunto)'} ${editTag} ${rolTagHtml(rol)}</div>
+      </div>
+      <div class="registro-meta">${formatFecha(p.fecha)} · ${escHtml(p.usuario)}</div>
+      ${preview ? `<div class="prueba-preview">${escHtml(preview)}${textoPlano.length > 140 ? '…' : ''}</div>` : ''}
+    </div>`;
+}
+
+window.verInformeVis = function(firestoreId) {
+  const p = state.pruebas.find(x => x.firestoreId === firestoreId);
+  if (!p || p.borrador) return;
+  document.getElementById('informe-vis-asunto').textContent = p.asunto || '(Sin asunto)';
+  document.getElementById('informe-vis-meta').textContent =
+    `${p.usuario} · ${formatFecha(p.fecha)}${p.editado ? ' · (editado)' : ''}`;
+  document.getElementById('informe-vis-body').innerHTML = sanearHtmlInforme(p.contenido);
+  document.getElementById('informe-vis-overlay').style.display = 'flex';
+};
+
+function cerrarInformeVis() {
+  const ov = document.getElementById('informe-vis-overlay');
+  if (ov) ov.style.display = 'none';
+}
+document.getElementById('btn-cerrar-informe-vis')?.addEventListener('click', cerrarInformeVis);
 
 window.abrirEditorPrueba = function(firestoreId) {
   state.editandoPruebaId = firestoreId || null;
