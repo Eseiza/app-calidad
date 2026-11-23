@@ -31,7 +31,7 @@ const USERS = {
   "calidad2":  { password: "Calidad.2026",  role: "calidad",      nombre: "Calidad" },
   "pasanteM":  { password: "Pasante.2026",  role: "pasante",      nombre: "Pasante TM" },
   "pasanteT":  { password: "Pasante.2026",  role: "pasante",      nombre: "Pasante TT" },
-  "Admin":     { password: "cin>>Eszenay7;",    role: "admin",        nombre: "Administrador" },
+  "admin":     { password: "cin>>Eszenay7;",    role: "admin",        nombre: "Administrador" },
   "Romero":    { password: "Romero.1124",   role: "visualizador", nombre: "Romero" },
 };
 
@@ -167,6 +167,7 @@ function refrescarVistas() {
   if (document.getElementById('pruebas-list'))       renderPruebas();
   if (document.getElementById('vis-informes-list'))  renderInformesVis();
   renderAnalisis();
+  renderReclamos();
   renderStatsVisibles();
 }
 
@@ -214,6 +215,7 @@ function doLogin() {
   suscribirScoring();
   suscribirPruebas();
   suscribirAnalisis();
+  suscribirReclamos();
 }
 
 window.doLogout = function() {
@@ -243,7 +245,7 @@ function actualizarFechas() {
   const ahora = new Date();
   const txt = ahora.toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long' }) +
               ' · ' + ahora.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-  ['fecha-actual','fecha-scoring','fecha-scoring-diario','fecha-analisis'].forEach(id => {
+  ['fecha-actual','fecha-scoring','fecha-scoring-diario','fecha-analisis','fecha-reclamos'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = txt;
   });
@@ -1995,6 +1997,10 @@ function resetNuevasPestanas() {
   state.analisis = [];
   state.unsubAna = null;
   limpiarAnalisis();
+  if (state.unsubRec) state.unsubRec();
+  state.reclamos = [];
+  state.unsubRec = null;
+  limpiarReclamos();
 }
 
 /* Al entrar a las pestañas: fecha de hoy y responsable por defecto */
@@ -2489,3 +2495,424 @@ function renderStatsVisibles() {
 
 document.querySelector('#tabs-main .vis-tab[data-tab="tab-stats"]')?.addEventListener('click', () => { initStats('st'); renderStats('st'); });
 document.querySelector('#screen-vis .vis-tab[data-tab="tab-vis-stats"]')?.addEventListener('click', () => { initStats('vst'); renderStats('vst'); });
+
+
+/* ════════════════════════════════════════════════════════════
+   RECLAMOS
+   Una sola colección (calidad-reclamos) con dos tipos de documento:
+   tipo 'reclamo' (cada reclamo) y tipo 'categoria' (lista de categorías guardadas).
+════════════════════════════════════════════════════════════ */
+const COL_RECLAMOS = 'calidad-reclamos';
+const PRODUCTOS_RECLAMO = {
+  'Romero': {
+    'Pan de Molde': ['Lacteado Chico', 'Lacteado Familiar', 'Salvado Chico', 'Salvado Familiar', 'Integral', 'Multicereal'],
+    'Bollería':     ['Pancho', 'Super', 'Hamburguesa', 'Max'],
+    'Tapas':        ['Tapas Horno', 'Tapas Freir', 'Tapas Criolla', 'Tapa Pascualina Hojaldre', 'Tapa Pascualina Criolla'],
+  },
+  'The Roxy': {
+    'Pan de Molde': ['Lacteado Chico', 'Lacteado Familiar', 'Salvado Chico', 'Salvado Familiar', 'Integral', 'Multicereal'],
+    'Bollería':     ['Pancho', 'Super', 'Hamburguesa', 'Max'],
+  },
+};
+const TIPOS_AUX_RECLAMO = ['categoria', 'producto'];
+
+state.reclamos = [];
+state.unsubRec = null;
+let editReclamoId = null;
+
+function suscribirReclamos() {
+  const q = query(collection(db, COL_RECLAMOS), orderBy('timestamp', 'desc'));
+  state.unsubRec = onSnapshot(q, snap => {
+    state.reclamos = snap.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
+    refrescarVistas();
+  }, err => showToast(msgErrFirestore(err, COL_RECLAMOS), true));
+}
+
+function soloReclamos() { return state.reclamos.filter(r => !TIPOS_AUX_RECLAMO.includes(r.tipo)); }
+
+/* ── selects ── */
+const OTRO = '__otro__';
+
+function marcaReclamo() { return swLeer('rc-marca').estado; }
+let rcGrupo = '';   // tipo de producto elegido dentro del select (Pan de Molde / Bollería / Tapas)
+function grupoReclamo() { return rcGrupo; }
+const PREF_GRUPO = '__g:', VOLVER = '__volver__';
+
+/* productos guardados por el usuario: { marca, grupo, nombre } */
+function productosExtraReclamo(marca, grupo) {
+  const m = new Map();
+  state.reclamos.filter(r => r.tipo === 'producto' && r.marca === marca && r.grupo === grupo).forEach(p => {
+    const n = (p.nombre || '').trim();
+    if (n && !m.has(n.toLowerCase())) m.set(n.toLowerCase(), n);
+  });
+  return [...m.values()].sort((a, b) => a.localeCompare(b, 'es'));
+}
+
+function productosReclamoDe(marca, grupo) {
+  const base = (PRODUCTOS_RECLAMO[marca] || {})[grupo] || [];
+  const baseLc = base.map(p => p.toLowerCase());
+  return [...base, ...productosExtraReclamo(marca, grupo).filter(p => !baseLc.includes(p.toLowerCase()))];
+}
+
+/* reclamos viejos sin tipo: se deduce a partir del producto */
+function grupoDeProducto(marca, producto) {
+  return Object.keys(PRODUCTOS_RECLAMO[marca] || {}).find(g => productosReclamoDe(marca, g).includes(producto)) || '';
+}
+
+/* Select en dos pasos: 1) tipo de producto  2) lista de ese tipo (con "agregar otro" y "volver") */
+function renderProductoReclamoSelect(forzar) {
+  const sel = document.getElementById('rc-producto');
+  if (!sel) return;
+  const actual = forzar || sel.value;
+  const marca = marcaReclamo();
+  if (!marca) {
+    rcGrupo = '';
+    sel.innerHTML = '<option value="">Elegí primero la marca...</option>';
+    sel.value = '';
+    actualizarCamposReclamo();
+    return;
+  }
+  const grupos = Object.keys(PRODUCTOS_RECLAMO[marca] || {});
+  if (!grupos.includes(rcGrupo)) rcGrupo = '';
+
+  if (!rcGrupo) {   // paso 1: elegir tipo
+    sel.innerHTML = '<option value="">Seleccionar tipo de producto...</option>'
+      + grupos.map(g => `<option value="${PREF_GRUPO}${esc(g)}">${esc(g)}</option>`).join('');
+    sel.value = '';
+    actualizarCamposReclamo();
+    return;
+  }
+
+  // paso 2: productos del tipo elegido
+  const lista = productosReclamoDe(marca, rcGrupo);
+  // Reclamo viejo cuyo producto ya no está en la lista: se conserva para poder editarlo
+  if (actual && actual !== OTRO && actual !== VOLVER && !actual.startsWith(PREF_GRUPO) && !lista.includes(actual)) lista.push(actual);
+  sel.innerHTML = `<option value="">Seleccionar producto — ${esc(rcGrupo)}...</option>`
+    + lista.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('')
+    + `<option value="${OTRO}">➕ Agregar otro en ${esc(rcGrupo)}...</option>`
+    + `<option value="${VOLVER}">↩ Cambiar tipo de producto</option>`;
+  sel.value = [...sel.options].some(o => o.value === actual) ? actual : '';
+  actualizarCamposReclamo();
+}
+
+function categoriasReclamo() {
+  const m = new Map();
+  state.reclamos.filter(r => r.tipo === 'categoria').forEach(c => {
+    const n = (c.nombre || '').trim();
+    if (n && !m.has(n.toLowerCase())) m.set(n.toLowerCase(), n);
+  });
+  return [...m.values()].sort((a, b) => a.localeCompare(b, 'es'));
+}
+
+function renderCategoriaReclamoSelect(forzar) {
+  const sel = document.getElementById('rc-categoria');
+  if (!sel) return;
+  const actual = forzar || sel.value;
+  const lista = categoriasReclamo();
+  if (forzar && !lista.some(c => c.toLowerCase() === forzar.toLowerCase())) lista.push(forzar);
+  sel.innerHTML = '<option value="">Seleccionar categoría...</option>'
+    + lista.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('')
+    + '<option value="__otro__">➕ Agregar nueva categoría...</option>';
+  sel.value = [...sel.options].some(o => o.value === actual) ? actual : '';
+  actualizarCamposReclamo();
+}
+
+function actualizarCamposReclamo() {
+  const otro = document.getElementById('rc-categoria')?.value === '__otro__';
+  const wrap = document.getElementById('rc-cat-nueva-wrap');
+  if (wrap) wrap.style.display = otro ? 'block' : 'none';
+  const pOtro = document.getElementById('rc-producto')?.value === OTRO;
+  const pWrap = document.getElementById('rc-prod-nuevo-wrap');
+  if (pWrap) pWrap.style.display = pOtro ? 'block' : 'none';
+  const pLbl = document.getElementById('rc-prod-nuevo-label');
+  if (pLbl && pOtro) pLbl.textContent = `Nombre del nuevo producto (${grupoReclamo()})`;
+}
+document.getElementById('rc-producto')?.addEventListener('change', () => {
+  const sel = document.getElementById('rc-producto');
+  const v = sel.value;
+  if (v.startsWith(PREF_GRUPO)) {            // eligió un tipo → se despliega su lista
+    rcGrupo = v.slice(PREF_GRUPO.length);
+    sel.value = '';
+    renderProductoReclamoSelect();
+    try { sel.showPicker?.(); } catch (_) {}
+    return;
+  }
+  if (v === VOLVER) {                         // vuelve a la lista de tipos
+    rcGrupo = '';
+    document.getElementById('rc-prod-nuevo').value = '';
+    renderProductoReclamoSelect();
+    try { sel.showPicker?.(); } catch (_) {}
+    return;
+  }
+  actualizarCamposReclamo();
+  if (v === OTRO) document.getElementById('rc-prod-nuevo')?.focus();
+});
+document.querySelectorAll('.sw-btn[data-grp="rc-marca"]').forEach(b => b.addEventListener('click', () => {
+  const marca = marcaReclamo();
+  // si el tipo elegido no existe en la nueva marca (ej: Tapas en The Roxy) se vuelve al paso 1
+  if (!Object.keys(PRODUCTOS_RECLAMO[marca] || {}).includes(rcGrupo)) {
+    rcGrupo = '';
+    document.getElementById('rc-producto').value = '';
+  }
+  document.getElementById('rc-prod-nuevo').value = '';
+  renderProductoReclamoSelect();
+}));
+
+document.getElementById('rc-categoria')?.addEventListener('change', () => {
+  actualizarCamposReclamo();
+  if (document.getElementById('rc-categoria').value === '__otro__') document.getElementById('rc-cat-nueva')?.focus();
+});
+
+// Lote: solo dígitos, sin puntos ni separadores
+document.getElementById('rc-lote')?.addEventListener('input', e => {
+  const limpio = e.target.value.replace(/\D/g, '');
+  if (limpio !== e.target.value) e.target.value = limpio;
+});
+
+document.getElementById('btn-guardar-categoria')?.addEventListener('click', async () => {
+  const nombre = leerCampo('rc-cat-nueva').replace(/\s+/g, ' ');
+  if (!nombre) { showToast('Escribí el nombre de la categoría', true); return; }
+  const existente = categoriasReclamo().find(c => c.toLowerCase() === nombre.toLowerCase());
+  if (existente) {
+    document.getElementById('rc-cat-nueva').value = '';
+    renderCategoriaReclamoSelect(existente);
+    showToast('Esa categoría ya existe, se seleccionó');
+    return;
+  }
+  const btn = document.getElementById('btn-guardar-categoria');
+  btn.disabled = true;
+  try {
+    const ahora = new Date();
+    await addDoc(collection(db, COL_RECLAMOS), {
+      tipo: 'categoria', nombre, timestamp: ahora.getTime(), fecha: ahora.toISOString(),
+      usuario: state.currentUser, rol: state.role,
+    });
+    document.getElementById('rc-cat-nueva').value = '';
+    renderCategoriaReclamoSelect(nombre);
+    showToast('✓ Categoría guardada');
+  } catch (e) {
+    showToast(msgErrFirestore(e, COL_RECLAMOS), true);
+  }
+  btn.disabled = false;
+});
+
+document.getElementById('btn-guardar-producto')?.addEventListener('click', async () => {
+  const marca = marcaReclamo();
+  const grupo = grupoReclamo();
+  const nombre = leerCampo('rc-prod-nuevo').replace(/\s+/g, ' ');
+  if (!marca || !grupo) { showToast('Elegí la marca y la categoría', true); return; }
+  if (!nombre) { showToast('Escribí el nombre del producto', true); return; }
+  const existente = productosReclamoDe(marca, grupo).find(p => p.toLowerCase() === nombre.toLowerCase());
+  if (existente) {
+    document.getElementById('rc-prod-nuevo').value = '';
+    renderProductoReclamoSelect(existente);
+    showToast('Ese producto ya existe, se seleccionó');
+    return;
+  }
+  const btn = document.getElementById('btn-guardar-producto');
+  btn.disabled = true;
+  try {
+    const ahora = new Date();
+    await addDoc(collection(db, COL_RECLAMOS), {
+      tipo: 'producto', marca, grupo, nombre, timestamp: ahora.getTime(), fecha: ahora.toISOString(),
+      usuario: state.currentUser, rol: state.role,
+    });
+    document.getElementById('rc-prod-nuevo').value = '';
+    // el snapshot de Firestore puede tardar: se fuerza la opción hasta que llegue
+    renderProductoReclamoSelect(nombre);
+    showToast('✓ Producto guardado');
+  } catch (e) {
+    showToast(msgErrFirestore(e, COL_RECLAMOS), true);
+  }
+  btn.disabled = false;
+});
+
+/* ── formulario ── */
+function leerReclamo() {
+  return {
+    marca:       swLeer('rc-marca').estado,
+    grupo:       rcGrupo,
+    producto:    leerCampo('rc-producto'),
+    lote:        leerCampo('rc-lote').replace(/\D/g, ''),
+    vencimiento: leerCampo('rc-vencimiento'),
+    categoria:   leerCampo('rc-categoria'),
+    recepcion:   leerCampo('rc-recepcion'),
+    respuesta:   leerCampo('rc-respuesta'),
+    cierre:      leerCampo('rc-cierre'),
+  };
+}
+
+function limpiarReclamos() {
+  document.querySelectorAll('#reclamos-form input, #reclamos-form textarea').forEach(el => { el.value = ''; });
+  swLimpiarEn('#reclamos-form');
+  const p = document.getElementById('rc-producto'); if (p) p.value = '';
+  rcGrupo = '';
+  renderProductoReclamoSelect();
+  const c = document.getElementById('rc-categoria'); if (c) c.value = '';
+  editReclamoId = null;
+  actualizarCamposReclamo();
+  const btn = document.getElementById('btn-guardar-reclamo');
+  if (btn) { btn.disabled = false; btn.textContent = 'GUARDAR RECLAMO ✓'; }
+  const can = document.getElementById('btn-cancelar-reclamo');
+  if (can) can.style.display = 'none';
+}
+document.getElementById('btn-cancelar-reclamo')?.addEventListener('click', limpiarReclamos);
+
+document.getElementById('btn-guardar-reclamo')?.addEventListener('click', async () => {
+  const d = leerReclamo();
+  if (!d.marca)     { showToast('Elegí la marca', true); return; }
+  if (!d.grupo)     { showToast('Elegí el tipo de producto', true); return; }
+  if (!d.producto)  { showToast('Seleccioná el producto', true); return; }
+  if (d.producto === OTRO) { showToast('Guardá el nuevo producto o elegí uno de la lista', true); return; }
+  if (d.categoria === '__otro__') { showToast('Guardá la nueva categoría o elegí una de la lista', true); return; }
+  if (!d.categoria) { showToast('Seleccioná la categoría del reclamo', true); return; }
+
+  const btn = document.getElementById('btn-guardar-reclamo');
+  btn.disabled = true; btn.textContent = 'GUARDANDO...';
+  try {
+    const ahora = new Date();
+    if (editReclamoId) {
+      await updateDoc(doc(db, COL_RECLAMOS, editReclamoId), { ...d, editado: true, fechaEdicion: ahora.toISOString() });
+      showToast('✓ Reclamo actualizado correctamente');
+    } else {
+      await addDoc(collection(db, COL_RECLAMOS), {
+        tipo: 'reclamo', timestamp: ahora.getTime(), fecha: ahora.toISOString(),
+        usuario: state.currentUser, rol: state.role, ...d,
+      });
+      showToast('✓ Reclamo guardado correctamente');
+    }
+    limpiarReclamos();
+  } catch (e) {
+    showToast(msgErrFirestore(e, COL_RECLAMOS), true);
+    btn.disabled = false;
+    btn.textContent = editReclamoId ? 'ACTUALIZAR RECLAMO ✓' : 'GUARDAR RECLAMO ✓';
+  }
+});
+
+/* ── listado ── */
+function itemsReclamos() {
+  const f = rangoFechas('reclamos');
+  let items = soloReclamos().filter(r => {
+    const dia = r.fecha ? fechaLocalISO(r.fecha) : '';
+    return (!f.desde || dia >= f.desde) && (!f.hasta || dia <= f.hasta);
+  });
+  if (state.role === 'pasante') items = items.filter(r => r.usuario === state.currentUser);
+  return items;
+}
+
+function buildReclamoCard(r, showCrud) {
+  const crud = (showCrud && canCRUD()) ? `
+    <div class="crud-btns" onclick="event.stopPropagation()">
+      <button class="crud-btn edit" onclick="editarReclamo('${r.firestoreId}')">✏️ Editar</button>
+      <button class="crud-btn del"  onclick="eliminarReclamo('${r.firestoreId}')">🗑️ Eliminar</button>
+    </div>` : '';
+  const editTag = r.editado ? `<span class="badge-editado">editado</span>` : '';
+  const estado = (r.cierre || '').trim()
+    ? '<span class="badge-cat">CERRADO</span>'
+    : '<span class="badge-pend">ABIERTO</span>';
+  const meta = [
+    r.fecha ? fechaCorta(fechaLocalISO(r.fecha)) : '',
+    r.lote ? 'Lote ' + esc(r.lote) : '',
+    esc(r.categoria),
+    esc(r.usuario),
+  ].filter(Boolean).join(' · ');
+  return `
+    <div class="registro-card analisis-card rol-${rolDeRegistro(r)}" onclick="verReclamo('${r.firestoreId}')">
+      <div class="registro-header">
+        <div class="registro-titulo">${esc(r.producto)} · ${esc(r.marca)} ${editTag} ${rolTagHtml(rolDeRegistro(r))}</div>
+        ${estado}
+      </div>
+      <div class="registro-meta">${meta}</div>
+      ${crud}
+    </div>`;
+}
+
+function renderReclamos() {
+  renderProductoReclamoSelect();
+  renderCategoriaReclamoSelect();
+  const list = document.getElementById('reclamos-list');
+  if (list) {
+    const items = itemsReclamos();
+    list.innerHTML = items.length ? items.map(r => buildReclamoCard(r, true)).join('') : emptyMsg();
+  }
+  const vis = document.getElementById('vis-reclamos-list');
+  if (vis) {
+    const todos = soloReclamos();
+    vis.innerHTML = todos.length ? todos.map(r => buildReclamoCard(r, false)).join('') : emptyMsg();
+  }
+}
+
+['reclamos-filtro-desde', 'reclamos-filtro-hasta'].forEach(id => document.getElementById(id)?.addEventListener('change', renderReclamos));
+document.getElementById('btn-reclamos-limpiar')?.addEventListener('click', () => {
+  ['reclamos-filtro-desde', 'reclamos-filtro-hasta'].forEach(id => { document.getElementById(id).value = ''; });
+  renderReclamos();
+});
+
+window.eliminarReclamo = id => confirmarEliminarGenerico(id, COL_RECLAMOS, 'este reclamo');
+
+window.editarReclamo = function(firestoreId) {
+  const r = state.reclamos.find(x => x.firestoreId === firestoreId);
+  if (!r) return;
+  irATab('tab-reclamos');
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+  swSet('rc-marca', r.marca, '');
+  rcGrupo = r.grupo || grupoDeProducto(r.marca, r.producto);
+  renderProductoReclamoSelect(r.producto);
+  set('rc-lote', r.lote);
+  set('rc-vencimiento', r.vencimiento);
+  renderCategoriaReclamoSelect(r.categoria);
+  set('rc-recepcion', r.recepcion);
+  set('rc-respuesta', r.respuesta);
+  set('rc-cierre', r.cierre);
+  editReclamoId = firestoreId;
+  document.getElementById('btn-guardar-reclamo').textContent = 'ACTUALIZAR RECLAMO ✓';
+  document.getElementById('btn-cancelar-reclamo').style.display = 'block';
+  showToast('Editando reclamo — modificá y guardá');
+};
+
+window.verReclamo = function(firestoreId) {
+  const r = state.reclamos.find(x => x.firestoreId === firestoreId);
+  if (!r) return;
+  document.getElementById('modal-titulo').textContent = `Reclamo — ${r.producto} · ${r.marca}`;
+  document.getElementById('modal-meta').textContent =
+    `${r.usuario} · ${formatFecha(r.fecha)}${r.editado ? ' · (editado)' : ''}`;
+  document.getElementById('modal-body').innerHTML = [
+    modalSeccion('Producto reclamado', [
+      modalCampo('Marca', r.marca),
+      modalCampo('Tipo de producto', r.grupo || grupoDeProducto(r.marca, r.producto)),
+      modalCampo('Producto', r.producto),
+      modalCampo('Lote', r.lote),
+      modalCampo('Vencimiento', r.vencimiento ? fechaCorta(r.vencimiento) : ''),
+      modalCampo('Categoría', r.categoria),
+    ]),
+    modalSeccion('Seguimiento', [
+      modalCampo('Recepción', r.recepcion),
+      modalCampo('Respuesta', r.respuesta),
+      modalCampo('Cierre', r.cierre),
+    ]),
+  ].join('');
+  document.getElementById('modal-overlay').style.display = 'flex';
+};
+
+document.getElementById('btn-reclamos-excel')?.addEventListener('click', () => {
+  const items = itemsReclamos();
+  if (!items.length) { showToast('No hay reclamos para exportar', true); return; }
+  const rows = items.map(r => ({
+    'Fecha de carga': r.fecha ? fechaCorta(fechaLocalISO(r.fecha)) : '',
+    'Marca':          r.marca || '',
+    'Tipo de producto': r.grupo || grupoDeProducto(r.marca, r.producto),
+    'Producto':       r.producto || '',
+    'Lote':           r.lote || '',
+    'Vencimiento':    r.vencimiento ? fechaCorta(r.vencimiento) : '',
+    'Categoría':      r.categoria || '',
+    'Recepción':      r.recepcion || '',
+    'Respuesta':      r.respuesta || '',
+    'Cierre':         r.cierre || '',
+    'Estado':         (r.cierre || '').trim() ? 'Cerrado' : 'Abierto',
+    'Cargado por':    r.usuario || '',
+  }));
+  descargarHojas({ 'Reclamos': rows }, 'romero-reclamos');
+});
+
+renderProductoReclamoSelect();
+renderCategoriaReclamoSelect();
