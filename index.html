@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -13,7 +12,6 @@
 <!-- LOGIN -->
 <div id="screen-login">
   <div class="login-box">
-  
     <div class="login-brand">
       <div class="login-heading">
         <div class="login-heading-top">CONTROL DE</div>
@@ -60,6 +58,7 @@
     <div class="vis-tab" data-tab="tab-historial">Historial</div>
     <div class="vis-tab" data-tab="tab-pruebas" id="tab-btn-pruebas">Informes</div>
     <div class="vis-tab" data-tab="tab-analisis">Análisis</div>
+    <div class="vis-tab" data-tab="tab-reclamos">Reclamos</div>
     <div class="vis-tab" data-tab="tab-stats">Estadísticas</div>
   </div>
 
@@ -695,6 +694,82 @@
     <div id="analisis-list"></div>
   </div>
 
+  <!-- ══ TAB: RECLAMOS ══ -->
+  <div id="tab-reclamos" class="vis-tab-content app-content">
+    <div class="section-header">
+      <div class="section-title" style="margin:0">RECLAMOS</div>
+      <div class="fecha-badge" id="fecha-reclamos">—</div>
+    </div>
+
+    <div id="reclamos-form">
+      <div class="card">
+        <div class="card-title">Producto reclamado</div>
+        <div class="field">
+          <label>Marca</label>
+          <div class="sw-row">
+            <div class="sw-btn" data-grp="rc-marca" data-v="Romero">Romero</div>
+            <div class="sw-btn" data-grp="rc-marca" data-v="The Roxy">The Roxy</div>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="field full">
+            <label>Producto</label>
+            <select id="rc-producto"></select>
+          </div>
+          <div class="field full" id="rc-prod-nuevo-wrap" style="display:none">
+            <label id="rc-prod-nuevo-label">Nombre del nuevo producto</label>
+            <div style="display:flex;gap:8px">
+              <input type="text" id="rc-prod-nuevo" placeholder="Ej: Tapa Empanada Hojaldre" style="flex:1">
+              <button class="btn btn-sm btn-green" id="btn-guardar-producto" type="button">GUARDAR</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Lote</label>
+            <input type="text" id="rc-lote" inputmode="numeric" pattern="[0-9]*" placeholder="Solo números" autocomplete="off">
+          </div>
+          <div class="field">
+            <label>Vencimiento</label>
+            <input type="date" id="rc-vencimiento">
+          </div>
+          <div class="field full">
+            <label>Categoría del reclamo</label>
+            <select id="rc-categoria"></select>
+          </div>
+          <div class="field full" id="rc-cat-nueva-wrap" style="display:none">
+            <label>Nombre de la nueva categoría</label>
+            <div style="display:flex;gap:8px">
+              <input type="text" id="rc-cat-nueva" placeholder="Ej: Cuerpo extraño" style="flex:1">
+              <button class="btn btn-sm btn-green" id="btn-guardar-categoria" type="button">GUARDAR</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Seguimiento</div>
+        <div class="field"><label>Recepción</label><textarea id="rc-recepcion" placeholder="Cómo y cuándo se recibió el reclamo..."></textarea></div>
+        <div class="field"><label>Respuesta</label><textarea id="rc-respuesta" placeholder="Respuesta dada al cliente..."></textarea></div>
+        <div class="field mb-0"><label>Cierre</label><textarea id="rc-cierre" placeholder="Cierre del reclamo..."></textarea></div>
+      </div>
+
+      <button class="btn btn-green" id="btn-guardar-reclamo" style="margin-top:4px">GUARDAR RECLAMO ✓</button>
+      <button class="btn btn-sm btn-outline" id="btn-cancelar-reclamo" style="display:none;margin-top:8px;width:100%">CANCELAR EDICIÓN</button>
+    </div>
+
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Reclamos cargados</div>
+      <div class="filtros-grid">
+        <div class="field mb-0"><label>Fecha desde</label><input type="date" id="reclamos-filtro-desde"></div>
+        <div class="field mb-0"><label>Fecha hasta</label><input type="date" id="reclamos-filtro-hasta"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn btn-sm btn-outline" id="btn-reclamos-limpiar" style="flex:1">LIMPIAR</button>
+        <button class="btn btn-sm btn-excel" id="btn-reclamos-excel" style="flex:1">⬇ EXCEL</button>
+      </div>
+    </div>
+    <div id="reclamos-list"></div>
+  </div>
+
   <!-- ══ TAB: ESTADÍSTICAS ══ -->
   <div id="tab-stats" class="vis-tab-content app-content">
     <div class="section-header"><div class="section-title" style="margin:0">ESTADÍSTICAS</div></div>
@@ -743,6 +818,7 @@
     <div class="vis-tab active" data-tab="tab-vis-partes">Registros</div>
     <div class="vis-tab" data-tab="tab-vis-scoring">Scoring</div>
     <div class="vis-tab" data-tab="tab-vis-analisis">Análisis</div>
+    <div class="vis-tab" data-tab="tab-vis-reclamos">Reclamos</div>
     <div class="vis-tab" data-tab="tab-vis-stats">Estadísticas</div>
     <div class="vis-tab" data-tab="tab-vis-informes">Informes</div>
   </div>
@@ -774,6 +850,10 @@
   <div id="tab-vis-informes" class="vis-tab-content app-content">
     <div class="section-header"><div class="section-title" style="margin:0">INFORMES</div></div>
     <div id="vis-informes-list"></div>
+  </div>
+  <div id="tab-vis-reclamos" class="vis-tab-content app-content">
+    <div class="section-header"><div class="section-title" style="margin:0">RECLAMOS</div></div>
+    <div id="vis-reclamos-list"></div>
   </div>
   <div id="tab-vis-analisis" class="vis-tab-content app-content">
     <div class="section-header"><div class="section-title" style="margin:0">ANÁLISIS</div></div>
